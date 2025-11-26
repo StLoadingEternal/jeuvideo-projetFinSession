@@ -2,10 +2,10 @@ using UnityEngine;
 
 public class Blaster : MonoBehaviour
 {
-    public float launchForce = 1000f;    // Force de lancement
-    public float fireRate = 0.2f;
+    private float launchForce = 1000f; // Force de lancement
+    private float fireRate = 0.5f;
     private float nextFire = 0f;
-    public Transform shootPoint; // ch
+    public Transform shootPoint;
     public GameObject projectilePrefab;
     
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -21,9 +21,18 @@ public class Blaster : MonoBehaviour
         {
             nextFire = Time.time + fireRate;
 
-            GameObject p = Instantiate(projectilePrefab, shootPoint.position, shootPoint.rotation);
+            // Calculer la position de spawn dans le monde
+            Vector3 worldPos = shootPoint.position;
+
+            // Rotation initiale du projectile : -90° sur X
+            Quaternion rotation = Quaternion.Euler(-90, transform.eulerAngles.y, -90);
+
+            // Instancier le projectile
+            GameObject p = Instantiate(projectilePrefab, worldPos, rotation);
+
+            // Ajouter une force vers l’avant
             Rigidbody rb = p.GetComponent<Rigidbody>();
-            rb.AddForce(shootPoint.forward * launchForce);
+            rb.AddForce(transform.forward * launchForce);
         }
     }
 }

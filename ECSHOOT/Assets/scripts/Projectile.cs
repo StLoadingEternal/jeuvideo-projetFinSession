@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class Projectile : MonoBehaviour
 {
-    public float lifeTime = 3f;
-    public int damage = 20;
+    public float lifeTime = 1f;
+    
 
     private void Start()
     {
