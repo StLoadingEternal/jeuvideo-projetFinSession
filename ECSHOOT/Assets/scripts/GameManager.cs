@@ -1,6 +1,8 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
@@ -10,23 +12,33 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI warningText;
     public TextMeshProUGUI scoreText;
     public GameObject indications;
+    public GameObject gameOverPanel;
+    public Image[] lifeImages;
+    public Button retryButton;
 
     [Header("Vagues")]
     public GameObject enemyPrefab;
-    public Transform player;
+    public Transform playerPosition;
     public int initialEnemies = 1;
 
-    EnemySpawner enemySpawnerScript;
-
     private int currentWave = 0;
-    private int enemiesAlive = 0;
+    public int enemiesAlive = 0;
     private int score = 0;
     private float waveDuration = 10f;
 
+    public GameObject player;
+    private PlayerController playerControllerScript;
+
+    EnemySpawner enemySpawnerScript;
+
+    public bool isGameOver;
     private Coroutine countdownCoroutine;
 
-    void Start()
+    private void Start()
     {
+        //Désactiver les ui pas nécessaires
+
+        playerControllerScript = player.GetComponent<PlayerController>();
         enemySpawnerScript = GameObject.Find("EnemySpawner").GetComponent<EnemySpawner>();
         StartCoroutine(StartWave());
     }
@@ -40,25 +52,31 @@ public class GameManager : MonoBehaviour
         yield return StartCoroutine(AfficherVague());
 
         // Calcul de la difficulté
-        int enemyCount = initialEnemies + (currentWave - 1);
-        float horizontalSpeed = 10f + (currentWave - 1) * 5f;
+        int totalEnemies = initialEnemies + (currentWave - 1);
+        float horizontalSpeed = 10f + (currentWave - 1) * 2f;
+
+        int spawnedEnemies = 0;
 
         // Spawn des ennemis
-        for (int i = 0; i < enemyCount; i++)
+        while (spawnedEnemies < totalEnemies)
         {
-            enemySpawnerScript.SpawnEnemy(horizontalSpeed, i);
-            enemiesAlive++;
+            // Si moins de 10 ennemis à l’écran, spawn
+            if (enemiesAlive < 10)
+            {
+                enemySpawnerScript.SpawnEnemy(horizontalSpeed, spawnedEnemies, currentWave);
+                enemiesAlive++;
+                spawnedEnemies++;
+            }
+            else
+            {
+                // Sinon, attendre que des ennemis soient détruits
+                yield return null;
+            }
         }
 
         // Décompte (COROUTINE !!!)
         StartCountdown();
 
-        // Attendre destruction des ennemis
-        while (enemiesAlive > 0)
-            yield return null;
-
-        // Vague suivante
-        StartCoroutine(StartWave());
     }
 
     void StartCountdown()
@@ -71,7 +89,7 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator LancerDecompte()
     {
-        float countdown = waveDuration;
+        float countdown = waveDuration + (currentWave - 1) * 5;
 
         while (countdown > 0)
         {
@@ -81,6 +99,29 @@ public class GameManager : MonoBehaviour
         }
 
         countdownText.text = "Temps : 0";
+
+        // Temps fini --> perte de vie ET on passe à la vague suivante
+        if (enemiesAlive > 0)
+        {
+            playerControllerScript.LoseLife(1);
+
+            // Détruire tous les ennemis restants
+            DestroyAllEnemies();
+
+            // Important : remettre le compteur à 0
+            enemiesAlive = 0;
+        }
+
+        // Lancer une nouvelle vague
+        StartCoroutine(StartWave());
+    }
+
+    void DestroyAllEnemies()
+    {
+        foreach (var enemy in GameObject.FindGameObjectsWithTag("Enemy"))
+        {
+            Destroy(enemy);
+        }
     }
 
     public IEnumerator AfficherVague()
@@ -103,8 +144,30 @@ public class GameManager : MonoBehaviour
         UpdateScoreUI();
     }
 
+    public void UpdateLifeUI(int currentLives)
+    {
+        for (int i = 0; i < lifeImages.Length; i++)
+        {
+            lifeImages[i].enabled = i < currentLives;
+        }
+    }
+
     void UpdateScoreUI()
     {
         scoreText.text = "Score : " + score;
+    }
+
+    public void GameOver()
+    {
+        gameOverPanel.SetActive(true);
+        Time.timeScale = 0f;
+    }
+
+
+    public void RetryGame()
+    {
+        // Recharge la scène actuelle
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        Time.timeScale = 1f;
     }
 }

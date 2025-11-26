@@ -2,16 +2,17 @@ using UnityEngine;
 
 public class Projectile : MonoBehaviour
 {
-    public float lifeTime = 1f;
-    
+    private float speed = 50f;  // vitesse du projectile
+    private float lifeTime = 2f; // durée avant destruction automatique
+
 
     private void Start()
     {
         Destroy(gameObject, lifeTime);
     }
 
-    private void OnTriggerEnter(Collider other)
+    private void Update()
     {
-        // Gerer la vie ici 
+        transform.position += transform.right * speed * Time.deltaTime;
     }
 }

@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class Blaster : MonoBehaviour
 {
-    private float launchForce = 1000f; // Force de lancement
+    private float launchForce = 500f; // Force de lancement
     private float fireRate = 0.5f;
     private float nextFire = 0f;
     public Transform shootPoint;
@@ -31,8 +31,8 @@ public class Blaster : MonoBehaviour
             GameObject p = Instantiate(projectilePrefab, worldPos, rotation);
 
             // Ajouter une force vers l’avant
-            Rigidbody rb = p.GetComponent<Rigidbody>();
-            rb.AddForce(transform.forward * launchForce);
+            //Rigidbody rb = p.GetComponent<Rigidbody>();
+            //rb.AddForce(transform.forward * launchForce);
         }
     }
 }

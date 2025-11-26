@@ -8,28 +8,80 @@ public class EnemyController : MonoBehaviour
     public float maxX = 25f;      // limite droite
     public float minX = -25f;     // limite gauche
 
+    [Header("Déplacement zig zag")]
+    public float zigzagFrequency = 5f;
+    public float zigzagMagnitude = 5f;
+
+    [Header("Déplacement wave")]
+    public float waveSpeed = 2f;
+
+    [Header("Déplacement stopGo")]
+    private float stopTimer;
+
+
+    public enum MovementType
+    {
+        Straight,
+        ZigZag,
+        Wave,
+        StopAndGo,
+        Drift,
+    }
+
+    MovementType[] types = { MovementType.Straight, MovementType.ZigZag, MovementType.Wave, MovementType.StopAndGo};
+
     [Header("Intelligence d'esquive")]
-    public float dodgeDistance = 8f;
-    public float dodgeSpeed = 10f;
-    public float dodgeCooldown = 0.5f;
-    private float lastDodgeTime = 0f;
+    public MovementType movementType;
+
+
 
     private int direction = 1;    // 1 = vers la droite, -1 = vers la gauche
 
-    private GameManager gameManagerScript;
+    private GameManager gameManagerScript;//peut être static
 
-    public ParticleSystem hitEffectPrefab;
+    public GameObject player;
+    private PlayerController playerControllerScript;
+
+
 
     private void Start()
     {
+        playerControllerScript = player.GetComponent<PlayerController>();
         gameManagerScript = GameObject.Find("GameManager").GetComponent<GameManager>();
+        movementType = types[UnityEngine.Random.Range(0, types.Length)];
     }
 
     void Update()
     {
 
-        MoveHorizontal();
-       
+        switch (movementType)
+        {
+            case MovementType.Straight:
+                MoveHorizontal();
+                break;
+
+            case MovementType.ZigZag:
+                ZigZagMove();
+                break;
+
+            case MovementType.Wave:
+                WaveMove();
+                break;
+
+            case MovementType.StopAndGo:
+                StopAndGoMove();
+                break;
+
+        }
+
+        if (transform.position.z < player.transform.position.z - 5f)
+        {
+            PlayerController playerControllerScript = player.GetComponent<PlayerController>();
+            playerControllerScript.LoseLife(1);
+
+            Destroy(gameObject); // détruire l'ennemi
+        }
+
     }
 
     void MoveHorizontal()
@@ -53,35 +105,46 @@ public class EnemyController : MonoBehaviour
         transform.position = new Vector3(newX, transform.position.y, transform.position.z);
     }
 
+    void ZigZagMove()
+    {
+        MoveHorizontal();
+        transform.position += Vector3.up * Mathf.Sin(Time.time * zigzagFrequency) * zigzagMagnitude * Time.deltaTime;
+    }
+
+    void WaveMove()
+    {
+        
+        float newY = transform.position.y + Mathf.Sin(Time.time * waveSpeed) * 0.1f;
+        transform.position = new Vector3(transform.position.x, newY, transform.position.z);
+    }
+
+    void StopAndGoMove()
+    {
+        stopTimer += Time.deltaTime;
+
+        if (stopTimer > 2f && stopTimer < 3f)
+            return; // il s'arrête
+
+        if (stopTimer >= 3f)
+            stopTimer = 0f;
+
+        MoveHorizontal();
+    }
+
     private void OnTriggerEnter(Collider other)
     {
-        // Vérifie que c'est une balle du joueur
         if (!other.CompareTag("fighterBullet"))
             return;
 
-        // Détruit la balle
         Destroy(other.gameObject);
 
-        // Jouer le hit effect en le détachant
-        if (hitEffectPrefab != null)
-        {
-            ParticleSystem effect = Instantiate(hitEffectPrefab, transform.position, Quaternion.identity);
-            effect.Play();
-            Destroy(effect.gameObject, 2f); // détruit après effet
-        }
+        EnemyHealth eh = GetComponent<EnemyHealth>();
+        if (eh != null)
+            eh.TakeDamage(1); // ENFIN on utilise la vie !
 
-        //// Jouer un son 
-        //if (hitSound != null)
-        //    AudioSource.PlayClipAtPoint(hitSound, transform.position);
-
-        // Informer le GameManager
-        gameManagerScript.OnEnemyDestroyed();
-
-        // Détruire l’ennemi
-        Destroy(gameObject);
     }
 
-
-    
-    
 }
+
+
+

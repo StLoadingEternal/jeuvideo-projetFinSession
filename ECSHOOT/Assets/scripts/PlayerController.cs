@@ -5,20 +5,27 @@ public class PlayerController : MonoBehaviour
     
     private float moveSpeed = 20f;// Gauche/droite
 
-    private float forwardSpeed = 40f;//Vitesse d'avancement 
+    private float forwardSpeed = 6f;//Vitesse d'avancement //Rajouter effet accélération avec espace//public float boostForce = 150f;
 
-    private float inclinaison = 10f;
+    private float inclinaison = 20f;
 
-    private float maxX = 25f; // limites gauche/droite
+    private float maxX = 30f; // limites gauche/droite
 
-    //public float boostForce = 150f;
+    [Header("Vies")]
+    public int maxLives = 3; // vies de base
+    private int currentLives;
 
-    public GameObject hitEffect;
+    
 
     private Rigidbody rb;
 
+    private GameManager gameManagerScript;
+
+
     void Start()
     {
+        currentLives = maxLives;
+        gameManagerScript = GameObject.Find("GameManager").GetComponent<GameManager>();
         rb = GetComponent<Rigidbody>();
     }
 
@@ -66,6 +73,27 @@ public class PlayerController : MonoBehaviour
         {
             //
             Destroy(other.gameObject);
+        }
+    }
+
+    public void LoseLife(int perte)
+    {
+        currentLives -= perte;
+        if (currentLives < 0) currentLives = 0;
+
+        gameManagerScript.UpdateLifeUI(currentLives);
+
+        if (currentLives <= 0)
+            gameManagerScript.GameOver();
+    }
+
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Enemy"))
+        {
+            LoseLife(3); // perdre 3 vies
+            Destroy(collision.gameObject); // détruire l'ennemi
         }
     }
 }
