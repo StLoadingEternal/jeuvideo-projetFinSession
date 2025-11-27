@@ -1214,6 +1214,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a535bee6fba93d1439aab8536929db47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  gameManagerScript: {fileID: 0}
 --- !u!1 &831950436
 GameObject:
   m_ObjectHideFlags: 0
@@ -2969,12 +2970,10 @@ MonoBehaviour:
   - {fileID: 704413878}
   - {fileID: 1434555616}
   retryButton: {fileID: 1636179866}
-  enemyPrefab: {fileID: 3839343771712128389, guid: e762e0a4252a57c4eb36b45697bebce3, type: 3}
-  playerPosition: {fileID: 4416352724108137}
+  MenuPause: {fileID: 797720089}
   initialEnemies: 1
   enemiesAlive: 0
   player: {fileID: 230729226}
-  isGameOver: 0
 --- !u!1 &1863839920
 GameObject:
   m_ObjectHideFlags: 0

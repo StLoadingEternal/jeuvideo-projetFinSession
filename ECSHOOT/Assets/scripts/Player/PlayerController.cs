@@ -2,25 +2,25 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    
-    private float moveSpeed = 20f;// Gauche/droite
+    // Vitesse gauche droite 
+    private float moveSpeed = 20f;
 
-    private float forwardSpeed = 6f;//Vitesse d'avancement //Rajouter effet accélération avec espace//public float boostForce = 150f;
+    //Vitesse d'avancement 
+    //Rajouter effet accélération avec espace(public float boostForce = 150f; + Animation)
+    private float forwardSpeed = 6f;
 
     private float inclinaison = 20f;
 
-    private float maxX = 30f; // limites gauche/droite
+    // limites gauche/droite de déplacements
+    private float maxX = 30f; 
 
     [Header("Vies")]
     public int maxLives = 3; // vies de base
     private int currentLives;
 
-    
-
+    //Références
     private Rigidbody rb;
-
     private GameManager gameManagerScript;
-
 
     void Start()
     {
@@ -37,13 +37,12 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        // Inputs horizontaux
+        // Déplacement horizontal
         float horizontalInput = Input.GetAxis("Horizontal");
 
         Vector3 newPos = transform.position + Vector3.right * horizontalInput * moveSpeed * Time.deltaTime;
 
-       
-        // Limite sur X avec if
+        //Déplacements limités
         if (newPos.x > maxX)
         {
             newPos.x = maxX;
@@ -53,36 +52,24 @@ public class PlayerController : MonoBehaviour
             newPos.x = -maxX;
         }
 
-        // Appliquer seulement si besoin
         transform.position = newPos;
 
-        float rotateZ = -horizontalInput * inclinaison; // Inclinaison
+        // Inclinaison
+        float rotateZ = -horizontalInput * inclinaison; 
         transform.localRotation = Quaternion.Euler(0, 0, rotateZ);
     }
 
 
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag("Enemy"))
-        {
-             // mort instantanée
-        }
-
-        if (other.CompareTag("enemyBullet"))
-        {
-            //
-            Destroy(other.gameObject);
-        }
-    }
-
+    //Perte de vie
     public void LoseLife(int perte)
     {
         currentLives -= perte;
         if (currentLives < 0) currentLives = 0;
 
+        //Màj UI
         gameManagerScript.UpdateLifeUI(currentLives);
 
+        //Game over
         if (currentLives <= 0)
             gameManagerScript.GameOver();
     }
@@ -94,6 +81,12 @@ public class PlayerController : MonoBehaviour
         {
             LoseLife(3); // perdre 3 vies
             Destroy(collision.gameObject); // détruire l'ennemi
+            //Effet
+        }
+
+        if (collision.gameObject.CompareTag("enemyBullet"))
+        {
+            // À voir 
         }
     }
 }

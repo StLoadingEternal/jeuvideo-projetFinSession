@@ -18,7 +18,7 @@ public class EnemyController : MonoBehaviour
     [Header("Déplacement stopGo")]
     private float stopTimer;
 
-
+    //Enum Mouvements
     public enum MovementType
     {
         Straight,
@@ -28,24 +28,24 @@ public class EnemyController : MonoBehaviour
         Drift,
     }
 
-    MovementType[] types = { MovementType.Straight, MovementType.ZigZag, MovementType.Wave, MovementType.StopAndGo};
+    private MovementType[] types = { MovementType.Straight, MovementType.ZigZag, MovementType.Wave, MovementType.StopAndGo};
 
-    [Header("Intelligence d'esquive")]
-    public MovementType movementType;
+    [Header("Mouvement variés")]
+    private MovementType movementType;
 
+    private int direction = 1;    // direction de déplcement horizontal (1 = vers la droite, -1 = vers la gauche)
 
-
-    private int direction = 1;    // 1 = vers la droite, -1 = vers la gauche
-
+    //Références
     private GameManager gameManagerScript;//peut être static
-
     public GameObject player;
     private PlayerController playerControllerScript;
+    EnemyHealth health;
 
 
 
     private void Start()
     {
+        health = GetComponent<EnemyHealth>();
         playerControllerScript = player.GetComponent<PlayerController>();
         gameManagerScript = GameObject.Find("GameManager").GetComponent<GameManager>();
         movementType = types[UnityEngine.Random.Range(0, types.Length)];
@@ -53,7 +53,7 @@ public class EnemyController : MonoBehaviour
 
     void Update()
     {
-
+        //Mouvement aléatoires 
         switch (movementType)
         {
             case MovementType.Straight:
@@ -74,16 +74,17 @@ public class EnemyController : MonoBehaviour
 
         }
 
+        // Si le joueur ne détruit pas l'ennemi avant de le dépasser perd une vie
         if (transform.position.z < player.transform.position.z - 5f)
         {
             PlayerController playerControllerScript = player.GetComponent<PlayerController>();
             playerControllerScript.LoseLife(1);
-
             Destroy(gameObject); // détruire l'ennemi
         }
 
     }
 
+    //Mouvement horizontal
     void MoveHorizontal()
     {
         // Déplacement horizontal
@@ -101,23 +102,25 @@ public class EnemyController : MonoBehaviour
             direction = 1;
         }
 
-        // Appliquer la nouvelle position (sans toucher à Y ou Z)
+        // Appliquer la nouvelle position 
         transform.position = new Vector3(newX, transform.position.y, transform.position.z);
     }
 
+    //Mouvement zig zag
     void ZigZagMove()
     {
         MoveHorizontal();
         transform.position += Vector3.up * Mathf.Sin(Time.time * zigzagFrequency) * zigzagMagnitude * Time.deltaTime;
     }
 
+    //Mouvement de vague haut et bas 
     void WaveMove()
     {
-        
         float newY = transform.position.y + Mathf.Sin(Time.time * waveSpeed) * 0.1f;
         transform.position = new Vector3(transform.position.x, newY, transform.position.z);
     }
 
+    //S'arrête puis repart
     void StopAndGoMove()
     {
         stopTimer += Time.deltaTime;
@@ -131,6 +134,7 @@ public class EnemyController : MonoBehaviour
         MoveHorizontal();
     }
 
+    //Collision avec une balle du joueur perd de la vie (Chaque balle enlève 1 vie)
     private void OnTriggerEnter(Collider other)
     {
         if (!other.CompareTag("fighterBullet"))
@@ -138,12 +142,9 @@ public class EnemyController : MonoBehaviour
 
         Destroy(other.gameObject);
 
-        EnemyHealth eh = GetComponent<EnemyHealth>();
-        if (eh != null)
-            eh.TakeDamage(1); // ENFIN on utilise la vie !
-
+        //Dégâts
+        health.TakeDamage(1); 
     }
-
 }
 
 

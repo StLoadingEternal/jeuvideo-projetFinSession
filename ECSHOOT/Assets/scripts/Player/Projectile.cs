@@ -13,6 +13,7 @@ public class Projectile : MonoBehaviour
 
     private void Update()
     {
+        //Va vers l'avant (Axe z) quand il est shooté
         transform.position += transform.right * speed * Time.deltaTime;
     }
 }

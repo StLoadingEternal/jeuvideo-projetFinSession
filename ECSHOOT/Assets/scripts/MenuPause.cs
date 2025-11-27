@@ -5,52 +5,37 @@ using UnityEngine.UIElements;
 
 public class MenuPause : MonoBehaviour
 {
+    public GameManager gameManagerScript;//Référence sur le script gameManager
 
-    private GameObject menuPausePanelInstance;
-    
-    private bool isPaused = false;
-
-
-    private void Start()
+   
+    void Start()
     {
-        menuPausePanelInstance = gameObject;
-    }
-    void Update()
-    {
-         //Mettre ailleurs
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            if (isPaused)
-                ResumeGame();
-            else
-                PauseGame();
-        }
+        gameManagerScript = GameObject.Find("GameManager").GetComponent<GameManager>();
     }
 
     public void ResumeGame()
     {
-        menuPausePanelInstance.SetActive(false);
+        gameObject.SetActive(false);
         Time.timeScale = 1f;   // reprendre le temps
-        isPaused = false;
     }
 
-    void PauseGame()
+    public void PauseGame()
     {
-        menuPausePanelInstance.SetActive(true);
-        Time.timeScale = 0f;   // arrêter le temps
-        isPaused = true;
-        EventSystem.current.IsPointerOverGameObject();
+        Debug.Log("Pause activée");
+        gameObject.SetActive(true);
+        Time.timeScale = 0f;   
     }
 
-    public void QuitToMainMenu()
+    public void QuitGame()
     {
         Time.timeScale = 1f; // éviter un bug si on retourne au menu
-        SceneManager.LoadScene("Menu_Scene");
+        //SceneNavigator.GoToMenu();
     }
 
     public void SaveGame()
     {
         Debug.Log("Sauvegarde effectuée (placeholder)");
-        // Ici tu mets ton vrai système de sauvegarde plus tard
+        //gameManagerScript.saveGame();
+        // sauvegarde plus tard
     }
 }

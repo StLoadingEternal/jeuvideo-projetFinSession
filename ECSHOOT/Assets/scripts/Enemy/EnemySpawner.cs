@@ -3,21 +3,15 @@ using UnityEngine;
 
 public class EnemySpawner : MonoBehaviour
 {
+    //références
     public Transform player;
     public GameObject enemyPrefab;
-    private float spawnDistance = 100f; // distance fixe devant le joueur
-    private float spread = 20f;        // dispersion latérale
 
+    // distance fixe d'apparition devant le joueur
+    private float spawnDistance = 100f; 
 
-    void Start()
-    {
-       
-    }
-
-    private void Update()
-    {
-        
-    }
+    // dispersion latérale d'apparition
+    private float spread = 20f;        
 
     public void SpawnEnemy(float horizontalSpeed, int index, int currentWave)
     {
@@ -38,11 +32,12 @@ public class EnemySpawner : MonoBehaviour
         // Garder la même hauteur que le joueur
         spawnPos.y = player.position.y;
 
+        //ils font face au joueur
         Quaternion spawnRot = Quaternion.Euler(0f, 180f, 0f);
 
         GameObject enemy = Instantiate(enemyPrefab, spawnPos, spawnRot);
-        
 
+        // vie et vitesse des ennemis  augment à chaque vague
         EnemyController ec = enemy.GetComponent<EnemyController>();
         EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
 
@@ -52,7 +47,6 @@ public class EnemySpawner : MonoBehaviour
             
         }
 
-        // vie des ennemis 
         if (enemyHealth != null)
         {
             if (currentWave < 3)
@@ -63,8 +57,6 @@ public class EnemySpawner : MonoBehaviour
                 enemyHealth.maxHealth = 4;
             else
                 enemyHealth.maxHealth = 5;
-
-            
         }
     }
 
