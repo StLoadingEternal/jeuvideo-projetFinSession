@@ -116,6 +116,8 @@ public class EnemyController : MonoBehaviour
     //Mouvement de vague haut et bas 
     void WaveMove()
     {
+        if (Time.timeScale == 0) return; // stop pendant la pause
+
         float newY = transform.position.y + Mathf.Sin(Time.time * waveSpeed) * 0.1f;
         transform.position = new Vector3(transform.position.x, newY, transform.position.z);
     }
