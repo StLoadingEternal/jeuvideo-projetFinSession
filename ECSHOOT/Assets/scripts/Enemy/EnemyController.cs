@@ -1,21 +1,22 @@
 using System;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class EnemyController : MonoBehaviour
 {
-    [Header("Déplacement horizontal")]
+    [Header("Dï¿½placement horizontal")]
     public float moveSpeed; // vitesse horizontale
     public float maxX = 25f;      // limite droite
     public float minX = -25f;     // limite gauche
 
-    [Header("Déplacement zig zag")]
+    [Header("Dï¿½placement zig zag")]
     public float zigzagFrequency = 5f;
     public float zigzagMagnitude = 5f;
 
-    [Header("Déplacement wave")]
+    [Header("Dï¿½placement wave")]
     public float waveSpeed = 2f;
 
-    [Header("Déplacement stopGo")]
+    [Header("Dï¿½placement stopGo")]
     private float stopTimer;
 
     //Enum Mouvements
@@ -30,13 +31,13 @@ public class EnemyController : MonoBehaviour
 
     private MovementType[] types = { MovementType.Straight, MovementType.ZigZag, MovementType.Wave, MovementType.StopAndGo};
 
-    [Header("Mouvement variés")]
+    [Header("Mouvement variï¿½s")]
     private MovementType movementType;
 
-    private int direction = 1;    // direction de déplcement horizontal (1 = vers la droite, -1 = vers la gauche)
+    private int direction = 1;    // direction de dï¿½plcement horizontal (1 = vers la droite, -1 = vers la gauche)
 
-    //Références
-    private GameManager gameManagerScript;//peut être static
+    //Rï¿½fï¿½rences
+    private GameManager gameManagerScript;//peut ï¿½tre static
     public GameObject player;
     private PlayerController playerControllerScript;
     EnemyHealth health;
@@ -53,7 +54,7 @@ public class EnemyController : MonoBehaviour
 
     void Update()
     {
-        //Mouvement aléatoires 
+        //Mouvement alï¿½atoires 
         switch (movementType)
         {
             case MovementType.Straight:
@@ -74,12 +75,12 @@ public class EnemyController : MonoBehaviour
 
         }
 
-        // Si le joueur ne détruit pas l'ennemi avant de le dépasser perd une vie
+        // Si le joueur ne dï¿½truit pas l'ennemi avant de le dï¿½passer perd une vie
         if (transform.position.z < player.transform.position.z - 5f)
         {
             PlayerController playerControllerScript = player.GetComponent<PlayerController>();
             playerControllerScript.LoseLife(1);
-            Destroy(gameObject); // détruire l'ennemi
+            Destroy(gameObject); // dï¿½truire l'ennemi
         }
 
     }
@@ -87,10 +88,10 @@ public class EnemyController : MonoBehaviour
     //Mouvement horizontal
     void MoveHorizontal()
     {
-        // Déplacement horizontal
+        // Dï¿½placement horizontal
         float newX = transform.position.x + moveSpeed * direction * Time.deltaTime;
 
-        // Vérifier les limites et inverser la direction si nécessaire
+        // Vï¿½rifier les limites et inverser la direction si nï¿½cessaire
         if (newX > maxX)
         {
             newX = maxX;
@@ -122,13 +123,13 @@ public class EnemyController : MonoBehaviour
         transform.position = new Vector3(transform.position.x, newY, transform.position.z);
     }
 
-    //S'arrête puis repart
+    //S'arrï¿½te puis repart
     void StopAndGoMove()
     {
         stopTimer += Time.deltaTime;
 
         if (stopTimer > 2f && stopTimer < 3f)
-            return; // il s'arrête
+            return; // il s'arrï¿½te
 
         if (stopTimer >= 3f)
             stopTimer = 0f;
@@ -136,7 +137,7 @@ public class EnemyController : MonoBehaviour
         MoveHorizontal();
     }
 
-    //Collision avec une balle du joueur perd de la vie (Chaque balle enlève 1 vie)
+    //Collision avec une balle du joueur perd de la vie (Chaque balle enlï¿½ve 1 vie)
     private void OnTriggerEnter(Collider other)
     {
         if (!other.CompareTag("fighterBullet"))
@@ -144,8 +145,51 @@ public class EnemyController : MonoBehaviour
 
         Destroy(other.gameObject);
 
-        //Dégâts
-        health.TakeDamage(1); 
+        //Dï¿½gï¿½ts
+        health.TakeDamage(1);
+        if (health.IsDead)
+        {
+            DropPowerUpsSimple();
+        }
+    }
+    
+    
+    
+    
+    [Header("Power-up Drops")] 
+    public GameObject[] powerUpPrefabs;
+    [Range(0, 100)] public float dropChance = 20f;
+    
+    void DropPowerUpsSimple()
+    {
+        if (powerUpPrefabs == null || powerUpPrefabs.Length == 0)
+            return;
+
+        // VÃ©rifier la chance de drop
+        if ( UnityEngine.Random.Range(0f, 100f) > dropChance)
+            return;
+
+        // Nombre de drops
+        int dropCount = 1;
+
+        for (int i = 0; i < dropCount; i++)
+        {
+            // Choisir un power-up alÃ©atoire
+            GameObject powerUpPrefab = powerUpPrefabs[UnityEngine.Random.Range(0, powerUpPrefabs.Length)];
+            
+            if (powerUpPrefab != null)
+            {
+                Vector3 spawnPosition = transform.position + 
+                                        new Vector3(
+                                            UnityEngine.Random.Range(-1f, 1f),
+                                            0.5f,
+                                            UnityEngine.Random.Range(-1f, 1f)
+                                        );
+
+                Instantiate(powerUpPrefab, spawnPosition, Quaternion.identity);
+                Debug.Log("dropped power up");
+            }
+        }
     }
 }
 

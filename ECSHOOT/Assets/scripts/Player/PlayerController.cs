@@ -88,9 +88,12 @@ public class PlayerController : MonoBehaviour
             //Effet
         }
 
-        if (collision.gameObject.CompareTag("enemyBullet"))
+        if (collision.gameObject.CompareTag("PowerUp"))
         {
-            // À voir 
+            Destroy(collision.gameObject);
+            Debug.Log("Collision power up");
         }
+        
+        
     }
 }

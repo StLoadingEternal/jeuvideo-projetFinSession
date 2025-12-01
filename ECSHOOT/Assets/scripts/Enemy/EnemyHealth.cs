@@ -11,19 +11,21 @@ public class EnemyHealth : MonoBehaviour
     [Header("UI")]
     public Image healthBar;
 
-    //Références
+    //Rï¿½fï¿½rences
     private EnemyController enemyController;
     private GameManager gameManager;
 
     //Destruction de l'ennemi
     private bool  isDead = false;
 
+    public bool IsDead => isDead;
+
     //PArticules explosion
     public ParticleSystem hitEffectPrefab;
 
     void Start()
     {
-        //Mis à jour de la vie de l'ennemi
+        //Mis ï¿½ jour de la vie de l'ennemi
         currentHealth = maxHealth;
         UpdateHealthUI();
 
@@ -32,14 +34,14 @@ public class EnemyHealth : MonoBehaviour
     }
 
 
-    //l'ennemi prend des dégâts on met à jour l'ui
+    //l'ennemi prend des dï¿½gï¿½ts on met ï¿½ jour l'ui
     public void TakeDamage(int damage)
     {
-        //dégâts
+        //dï¿½gï¿½ts
         currentHealth -= damage;
         if (currentHealth < 0) 
             currentHealth = 0;
-        //UI màj
+        //UI mï¿½j
         UpdateHealthUI();
 
         //Il meurt s'il n'a plus de vie
@@ -47,7 +49,7 @@ public class EnemyHealth : MonoBehaviour
             Die();
     }
 
-    //màj Barre de vie
+    //mï¿½j Barre de vie
     void UpdateHealthUI()
     {
         if (healthBar != null)
@@ -67,7 +69,7 @@ public class EnemyHealth : MonoBehaviour
         if (gameManager != null)
             gameManager.OnEnemyDestroyed();
 
-        // Détruit l’ennemi
+        // Dï¿½truit lï¿½ennemi
         Destroy(gameObject);
 
         // Effet visuel
@@ -80,3 +82,4 @@ public class EnemyHealth : MonoBehaviour
     }
 
 }
+

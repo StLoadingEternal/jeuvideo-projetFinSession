@@ -31,7 +31,7 @@ public class MenuPause : MonoBehaviour
         if (gameManagerScript != null)
         {
             gameManagerScript.SaveGame();
-            SceneManager.LoadScene("Menu_Scene2");
+            SceneManager.LoadScene("Menu_Scene");
         }
         
         Time.timeScale = 1f;
