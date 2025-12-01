@@ -5,9 +5,8 @@ using UnityEngine.UIElements;
 
 public class MenuPause : MonoBehaviour
 {
-    public GameManager gameManagerScript;//Référence sur le script gameManager
+    public GameManager gameManagerScript;
 
-   
     void Start()
     {
         gameManagerScript = GameObject.Find("GameManager").GetComponent<GameManager>();
@@ -16,26 +15,56 @@ public class MenuPause : MonoBehaviour
     public void ResumeGame()
     {
         gameObject.SetActive(false);
-        Time.timeScale = 1f;   // reprendre le temps
+        Time.timeScale = 1f;
     }
 
     public void PauseGame()
     {
-        Debug.Log("Pause activée");
+        Debug.Log("Pause activÃ©e");
         gameObject.SetActive(true);
-        Time.timeScale = 0f;   
+        Time.timeScale = 0f;
     }
 
     public void QuitGame()
     {
-        Time.timeScale = 1f; // éviter un bug si on retourne au menu
+        // Sauvegarder avant de quitter
+        if (gameManagerScript != null)
+        {
+            gameManagerScript.SaveGame();
+            SceneManager.LoadScene("Menu_Scene2");
+        }
+        
+        Time.timeScale = 1f;
         //SceneNavigator.GoToMenu();
     }
 
     public void SaveGame()
     {
-        Debug.Log("Sauvegarde effectuée (placeholder)");
-        //gameManagerScript.saveGame();
-        // sauvegarde plus tard
+        if (gameManagerScript != null)
+        {
+            gameManagerScript.SaveGame();
+            Debug.Log("Sauvegarde effectuÃ©e !");
+        }
+    }
+
+    public void LoadGame()
+    {
+        if (gameManagerScript != null)
+        {
+            gameManagerScript.LoadGame();
+            Debug.Log("Chargement effectuÃ© !");
+        }
+    }
+
+    public void NewGame()
+    {
+        // Supprimer la sauvegarde existante
+        if (gameManagerScript != null)
+        {
+            gameManagerScript.DeleteSave();
+        }
+        
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }

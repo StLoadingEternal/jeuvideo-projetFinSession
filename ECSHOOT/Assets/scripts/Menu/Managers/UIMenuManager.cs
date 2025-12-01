@@ -21,6 +21,12 @@ namespace SlimUI.ModernMenu{
         [Tooltip("Optional 4th Menu")]
         public GameObject extrasMenu;
 
+        // SAUVEGARDE - Nouveaux éléments
+        [Header("SAUVEGARDE")]
+        public Button continueButton;
+        public TextMeshProUGUI saveInfoText;
+        public GameObject newGameConfirmationPanel;
+
         public enum Theme {custom1, custom2, custom3};
         [Header("THEME SETTINGS")]
         public Theme theme;
@@ -48,7 +54,7 @@ namespace SlimUI.ModernMenu{
 		public bool waitForInput = true;
         public GameObject loadingMenu;
 		[Tooltip("The loading bar Slider UI element in the Loading Screen")]
-        public Slider loadingBar;
+        // public Slider loadingBar;
         public TMP_Text loadPromptText;
 		public KeyCode userPromptKey;
 
@@ -66,12 +72,154 @@ namespace SlimUI.ModernMenu{
 			playMenu.SetActive(false);
 			exitMenu.SetActive(false);
 			if(extrasMenu) extrasMenu.SetActive(false);
+			if(newGameConfirmationPanel) newGameConfirmationPanel.SetActive(false);
 			firstMenu.SetActive(true);
 			mainMenu.SetActive(true);
 
 			SetThemeColors();
+			CheckSaveFile(); // Vérifier la sauvegarde au démarrage
 		}
 
+		// ============ SYSTÈME DE SAUVEGARDE ============
+
+		private void CheckSaveFile()
+		{
+			bool hasSave = SaveSystem.CheckHasSave();
+			
+			if (continueButton != null)
+			{
+				continueButton.interactable = hasSave;
+				
+				if (hasSave)
+				{
+					// Charger les infos de sauvegarde
+					GameState saveData = SaveSystem.LoadStateFromSave();
+					if (saveData != null)
+					{
+						TextMeshProUGUI buttonText = continueButton.GetComponentInChildren<TextMeshProUGUI>();
+						if (buttonText != null)
+						{
+							buttonText.text = $"CONTINUER\nVague {saveData.currentWave} - Score: {saveData.score}";
+						}
+						
+						// Mettre à jour le texte d'info si besoin
+						if (saveInfoText != null)
+						{
+							saveInfoText.text = $"Partie sauvegardée:\nVague {saveData.currentWave} - Score: {saveData.score} - Vies: {saveData.lives}";
+						}
+					}
+				}
+				else
+				{
+					TextMeshProUGUI buttonText = continueButton.GetComponentInChildren<TextMeshProUGUI>();
+					if (buttonText != null)
+					{
+						buttonText.text = "CONTINUER\n(Aucune sauvegarde)";
+					}
+				}
+			}
+		}
+
+		public void ContinueGame()
+		{
+			if (SaveSystem.CheckHasSave())
+			{
+				PlaySwoosh();
+				LoadScene("mainScene"); // Remplacez par le nom de votre scène de jeu
+			}
+			else
+			{
+				Debug.LogWarning("Aucune sauvegarde trouvée !");
+				PlayHover(); // Jouer un son d'erreur si vous en avez un
+			}
+		}
+
+		public void NewGame()
+		{
+			PlaySwoosh();
+			
+			// Vérifier si une sauvegarde existe
+			if (SaveSystem.CheckHasSave() && newGameConfirmationPanel != null)
+			{
+				// Afficher le panel de confirmation
+				newGameConfirmationPanel.SetActive(true);
+			}
+			else
+			{
+				// Démarrer directement une nouvelle partie
+				StartNewGame();
+			}
+		}
+
+		public void ConfirmNewGame()
+		{
+			StartNewGame();
+			
+			if (newGameConfirmationPanel != null)
+			{
+				newGameConfirmationPanel.SetActive(false);
+			}
+		}
+
+		public void CancelNewGame()
+		{
+			PlayHover();
+			
+			if (newGameConfirmationPanel != null)
+			{
+				newGameConfirmationPanel.SetActive(false);
+			}
+		}
+
+		private void StartNewGame()
+		{
+			// Supprimer l'ancienne sauvegarde
+			SaveSystem.DeleteSave();
+			
+			// Charger la scène de jeu
+			LoadScene("mainScene"); // Remplacez par le nom de votre scène de jeu
+		}
+
+		// ============ FONCTIONS ORIGINALES (conservées) ============
+
+		public void LoadScene(string sceneName)
+		{
+			SceneManager.LoadSceneAsync(sceneName);
+			
+			
+			// if(waitForInput){
+   //              StartCoroutine(LoadAsynchronously(sceneName));
+   //          }
+		}
+		
+		// gestion fenetre de chargement
+		// IEnumerator LoadAsynchronously(string sceneName)
+		// {
+		// 	// loadingBar.value = 0;
+		// 	loadingMenu.SetActive(true);
+		//
+		// 	AsyncOperation operation = SceneManager.LoadSceneAsync(sceneName);
+		// 	operation.allowSceneActivation = false;
+		//
+		// 	while (!operation.isDone)
+		// 	{
+		// 		float progress = Mathf.Clamp01(operation.progress / 0.9f);
+		// 		// loadingBar.value = progress;
+		//
+		// 		if (operation.progress >= 0.9f)
+		// 		{
+		// 			loadPromptText.text = "Appuyez sur " + userPromptKey + " pour continuer";
+		//
+		// 			if (Input.GetKeyDown(userPromptKey))
+		// 			{
+		// 				operation.allowSceneActivation = true;
+		// 			}
+		// 		}
+		//
+		// 		yield return null;
+		// 	}
+		// }
+		
 		void SetThemeColors()
 		{
 			switch (theme)
@@ -98,12 +246,14 @@ namespace SlimUI.ModernMenu{
 		}
 
 		public void PlayCampaign(){
+			PlaySwoosh();
 			exitMenu.SetActive(false);
 			if(extrasMenu) extrasMenu.SetActive(false);
 			playMenu.SetActive(true);
 		}
 		
 		public void PlayCampaignMobile(){
+			PlaySwoosh();
 			exitMenu.SetActive(false);
 			if(extrasMenu) extrasMenu.SetActive(false);
 			playMenu.SetActive(true);
@@ -111,9 +261,11 @@ namespace SlimUI.ModernMenu{
 		}
 
 		public void ReturnMenu(){
+			PlaySwoosh();
 			playMenu.SetActive(false);
 			if(extrasMenu) extrasMenu.SetActive(false);
 			exitMenu.SetActive(false);
+			if(newGameConfirmationPanel) newGameConfirmationPanel.SetActive(false);
 			mainMenu.SetActive(true);
 		}
 
@@ -131,7 +283,6 @@ namespace SlimUI.ModernMenu{
 		}
 
 		void DisablePanels(){
-			
 			PanelSkin.SetActive(false);
 			PanelGame.SetActive(false);
 			lineGame.SetActive(false);
@@ -164,12 +315,14 @@ namespace SlimUI.ModernMenu{
 
 		// Are You Sure - Quit Panel Pop Up
 		public void AreYouSure(){
+			PlaySwoosh();
 			exitMenu.SetActive(true);
 			if(extrasMenu) extrasMenu.SetActive(false);
 			DisablePlayCampaign();
 		}
 
 		public void AreYouSureMobile(){
+			PlaySwoosh();
 			exitMenu.SetActive(true);
 			if(extrasMenu) extrasMenu.SetActive(false);
 			mainMenu.SetActive(false);
@@ -177,6 +330,7 @@ namespace SlimUI.ModernMenu{
 		}
 
 		public void ExtrasMenu(){
+			PlaySwoosh();
 			playMenu.SetActive(false);
 			if(extrasMenu) extrasMenu.SetActive(true);
 			exitMenu.SetActive(false);
@@ -189,6 +343,5 @@ namespace SlimUI.ModernMenu{
 				Application.Quit();
 			#endif
 		}
-
 	}
 }

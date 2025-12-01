@@ -2,47 +2,80 @@ using System.IO;
 using UnityEngine;
 using Newtonsoft.Json;
 
-//Classe GameState enregistre l'état d'une partie 
 [System.Serializable]
 public class GameState
 {
     public int score;
     public int lives;
-    public float vague;
+    public int currentWave;
 }
-
 
 public class SaveSystem
 {
-    //Fichier de sauvegarde d'une partie
     private static readonly string savePath = Path.Combine(Application.persistentDataPath, "save.json");
 
-    //Sauvegarde l'état du jeu par sérialisation
-    public static void SaveGame(GameState state)
+    // MÃ©thode statique pour sauvegarder
+    private static void SaveGame(GameState state)
     {
-        string json = JsonConvert.SerializeObject(state, Formatting.Indented);
-        File.WriteAllText(savePath, json);
-        Debug.Log($"Jeu sauvegardé dans : {savePath}");
+        try
+        {
+            string json = JsonConvert.SerializeObject(state, Formatting.Indented);
+            File.WriteAllText(savePath, json);
+            Debug.Log("Jeu sauvegardÃ© : " + savePath);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError("Erreur sauvegarde : " + e.Message);
+        }
     }
 
-    //Check si une sauvegarde est existante
+    // Sauvegarde avec paramÃ¨tres
+    public void SaveGame(int score, int lives, int currentWave)
+    {
+        GameState state = new GameState()
+        {
+            score = score,
+            lives = lives,
+            currentWave = currentWave
+        };
+
+        SaveGame(state);
+    }
+
     public static bool CheckHasSave()
     {
         return File.Exists(savePath);
     }
 
-    //Chargée une sauvegarde existante par déssérialisation
     public static GameState LoadStateFromSave()
     {
         if (!File.Exists(savePath))
         {
-            Debug.LogWarning("Aucune sauvegarde trouvée !");
+            Debug.LogWarning("Aucune sauvegarde trouvÃ©e !");
             return null;
         }
 
-        string json = File.ReadAllText(savePath);
-        GameState state = JsonConvert.DeserializeObject<GameState>(json);
-        Debug.Log("Sauvegarde chargée !");
-        return state;
+        try
+        {
+            string json = File.ReadAllText(savePath);
+            GameState state = JsonConvert.DeserializeObject<GameState>(json);
+            Debug.Log("Sauvegarde chargÃ©e !");
+            return state;
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError("Erreur chargement : " + e.Message);
+            return null;
+        }
+    }
+    
+    // Supprimer la sauvegarde
+    public static void DeleteSave()
+    {
+        if (File.Exists(savePath))
+        {
+            File.Delete(savePath);
+            Debug.Log("Sauvegarde supprimÃ©e");
+        }
     }
 }

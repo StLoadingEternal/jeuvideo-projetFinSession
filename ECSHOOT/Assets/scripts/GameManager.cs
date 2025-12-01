@@ -34,24 +34,33 @@ public class GameManager : MonoBehaviour
     //Game over
     private bool isGameOver;
     
-    //Référence sur la couroutine du décompte
+    //Sauvegarde
+    private SaveSystem saveSystem;
+    
+    //Rï¿½fï¿½rence sur la couroutine du dï¿½compte
     private Coroutine countdownCoroutine;
-    //Références sur le menu pause
+    //Rï¿½fï¿½rences sur le menu pause
     private MenuPause menuPauseScript;
 
     private void Start()
     {
-        //Références sur le joueur et l'ennemi spawner
+        //Rï¿½fï¿½rences sur le joueur et l'ennemi spawner
         playerControllerScript = player.GetComponent<PlayerController>();
         enemySpawnerScript = GameObject.Find("EnemySpawner").GetComponent<EnemySpawner>();
+
+        //SystÃ¨me de sauvegarde
+        saveSystem = new SaveSystem();
 
         //Initialiser correctement l'UI
         UpdateScoreUI();
         UpdateLifeUI();
         gameOverPanel.SetActive(false);
 
-        //Réference sur le menu pause
+        //Rï¿½ference sur le menu pause
         menuPauseScript = MenuPause.GetComponent<MenuPause>();
+
+        // Charger la sauvegarde si elle existe
+        LoadGame();
 
         StartCoroutine(StartWave());
     }
@@ -65,61 +74,143 @@ public class GameManager : MonoBehaviour
             else
                menuPauseScript.ResumeGame();
         }
-    }
 
-    //Mis à jour vie
-    public void UpdateLifeUI(int currentLives = 0)
-    {
-        for (int i = 0; i < lifeImages.Length; i++)
+        // Sauvegarde manuelle (pour test)
+        if (Input.GetKeyDown(KeyCode.F5))
         {
-            lifeImages[i].enabled = i < currentLives;
+            SaveGame();
         }
     }
 
-    //Mis à jour score
+    // ============ SYSTÃˆME DE SAUVEGARDE ============
+
+    public void SaveGame()
+    {
+        if (playerControllerScript != null)
+        {
+            saveSystem.SaveGame(score, playerControllerScript.currentLives, currentWave);
+        }
+    }
+
+    public void LoadGame()
+    {
+        GameState state = SaveSystem.LoadStateFromSave();
+        if (state != null)
+        {
+            // Appliquer l'Ã©tat chargÃ©
+            score = state.score;
+            currentWave = state.currentWave;
+            
+            if (playerControllerScript != null)
+            {
+                playerControllerScript.currentLives = state.lives;
+            }
+
+            // Mettre Ã  jour l'UI
+            UpdateScoreUI();
+            UpdateLifeUI();
+            
+            Debug.Log($"Partie chargÃ©e - Vague: {currentWave} Score: {score} Vies: {state.lives}");
+        }
+        else
+        {
+            Debug.Log("Nouvelle partie dÃ©marrÃ©e");
+            // Initialiser les vies du joueur si nouvelle partie
+            if (playerControllerScript != null)
+            {
+                playerControllerScript.currentLives = 3;
+                UpdateLifeUI();
+            }
+        }
+    }
+
+    public void DeleteSave()
+    {
+        SaveSystem.DeleteSave();
+        Debug.Log("Sauvegarde supprimÃ©e");
+    }
+
+    // ============ GESTION DU JEU ============
+
+    //Mis ï¿½ jour vie
+    public void UpdateLifeUI(int currentLives = -1)
+    {
+        int livesToDisplay = currentLives;
+        
+        if (currentLives == -1 && playerControllerScript != null)
+        {
+            livesToDisplay = playerControllerScript.currentLives;
+        }
+
+        for (int i = 0; i < lifeImages.Length; i++)
+        {
+            if (lifeImages[i] != null)
+            {
+                lifeImages[i].enabled = i < livesToDisplay;
+            }
+        }
+    }
+
+    //Mis ï¿½ jour score
     void UpdateScoreUI()
     {
-        scoreText.text = "Score : " + score;
+        if (scoreText != null)
+            scoreText.text = "Score : " + score;
     }
 
     public void GameOver()
     {
+        isGameOver = true;
         gameOverPanel.SetActive(true);
+        
+        // Supprimer la sauvegarde quand game over
+        DeleteSave();
+        
         Time.timeScale = 0f;
     }
 
     public void RetryGame()
     {
-        // Recharge la scène actuelle
+        // Supprimer l'ancienne sauvegarde avant de recommencer
+        DeleteSave();
+        
+        // Recharge la scÃ¨ne actuelle
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         Time.timeScale = 1f;
     }
 
-    //Affiche un texte au début de chague vague
+    //Affiche un texte au dï¿½but de chague vague
     public IEnumerator AfficherVague()
     {
-        waveText.text = "VAGUE " + currentWave;
-        warningText.text = "Détruisez les vaisseaux avant le temps imparti";
+        if (waveText != null)
+            waveText.text = "VAGUE " + currentWave;
+        if (warningText != null)
+            warningText.text = "DÃ©truisez les vaisseaux avant le temps imparti";
 
-        indications.gameObject.SetActive(true);
+        if (indications != null)
+            indications.gameObject.SetActive(true);
 
         yield return new WaitForSeconds(2f);
 
-        indications.gameObject.SetActive(false);
-
+        if (indications != null)
+            indications.gameObject.SetActive(false);
     }
 
-    //Débuter une vague
+    //Dï¿½buter une vague
     IEnumerator StartWave()
     {
+        // Sauvegarde au dÃ©but de chaque vague
+        SaveGame();
+
         //VAgue suivante
         currentWave++;
-        //UpdateScoreUI();
+        UpdateScoreUI();
+        UpdateLifeUI();
 
         //On affiche le texte avant de commencer
         yield return StartCoroutine(AfficherVague());
 
-        // Calcul de la difficulté ( La vitesse et le nombre d'ennemis augmentent)
+        // Calcul de la difficultÃ©
         int totalEnemies = initialEnemies + (currentWave - 1);
         float horizontalSpeed = 10f + (currentWave - 1) * 2f;
 
@@ -128,7 +219,6 @@ public class GameManager : MonoBehaviour
         // Spawn des ennemis
         while (spawnedEnemies < totalEnemies)
         {
-            // Si moins de 10 ennemis à l’écran, spawn
             if (enemiesAlive < 10)
             {
                 enemySpawnerScript.SpawnEnemy(horizontalSpeed, spawnedEnemies, currentWave);
@@ -137,15 +227,11 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                // Sinon, attendre que des ennemis soient détruits
                 yield return null;
             }
         }
 
-        //On start le décompte à chaque vague
-        //A  voir si on le garde
         StartCountdown();
-
     }
 
     void StartCountdown()
@@ -158,34 +244,39 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator LancerDecompte()
     {
-        //Chaque vague le temps augmente
         float countdown = waveDuration + (currentWave - 1) * 5;
 
-        //Décompte
         while (countdown > 0)
         {
-            countdownText.text = "Temps : " + Mathf.Ceil(countdown);
+            if (countdownText != null)
+                countdownText.text = "Temps : " + Mathf.Ceil(countdown);
             yield return new WaitForSeconds(1f);
             countdown--;
         }
 
-        countdownText.text = "Temps : 0";
+        if (countdownText != null)
+            countdownText.text = "Temps : 0";
 
-        // Temps finit && ennemi restant > 0 = on passe à la vague suivante. Le joueur perd une vie
         if (enemiesAlive > 0)
         {
-            playerControllerScript.LoseLife(1);
+            if (playerControllerScript != null)
+            {
+                playerControllerScript.LoseLife(1);
+                // Sauvegarde aprÃ¨s avoir perdu une vie
+                SaveGame();
+            }
 
-            // Détruire tous les ennemis restants
             DestroyAllEnemies();
             enemiesAlive = 0;
         }
 
-        // Lancer une nouvelle vague
-        StartCoroutine(StartWave());
+        // VÃ©rifier si le jeu n'est pas terminÃ© avant de lancer une nouvelle vague
+        if (!isGameOver && playerControllerScript != null && playerControllerScript.currentLives > 0)
+        {
+            StartCoroutine(StartWave());
+        }
     }
 
-    //Détruire tous les ennemis quand le temps imparti est terminé
     void DestroyAllEnemies()
     {
         foreach (var enemy in GameObject.FindGameObjectsWithTag("Enemy"))
@@ -194,12 +285,14 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    //Score augmente à la destruction de chaque ennemi
+    //Score augmente ï¿½ la destruction de chaque ennemi
     public void OnEnemyDestroyed()
     {
         enemiesAlive--;
         score += 100;
         UpdateScoreUI();
+        
+        // Sauvegarde automatique quand un ennemi est dÃ©truit
+        SaveGame();
     }
-    
 }

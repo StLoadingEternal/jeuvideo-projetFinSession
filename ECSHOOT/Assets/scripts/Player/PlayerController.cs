@@ -16,7 +16,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("Vies")]
     public int maxLives = 3; // vies de base
-    private int currentLives;
+    public int currentLives;
 
     //Références
     private Rigidbody rb;
@@ -61,17 +61,21 @@ public class PlayerController : MonoBehaviour
 
 
     //Perte de vie
-    public void LoseLife(int perte)
+    public void LoseLife(int amount)
     {
-        currentLives -= perte;
-        if (currentLives < 0) currentLives = 0;
-
-        //Màj UI
-        gameManagerScript.UpdateLifeUI(currentLives);
-
-        //Game over
-        if (currentLives <= 0)
-            gameManagerScript.GameOver();
+        currentLives -= amount;
+        
+        // Mettre à jour l'UI des vies
+        GameManager gameManager = FindObjectOfType<GameManager>();
+        if (gameManager != null)
+        {
+            gameManager.UpdateLifeUI(currentLives);
+            
+            if (currentLives <= 0)
+            {
+                gameManager.GameOver();
+            }
+        }
     }
 
 

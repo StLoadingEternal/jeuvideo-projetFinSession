@@ -2,6 +2,7 @@
 using System.Collections;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 namespace SlimUI.ModernMenu{
 	public class UISettingsManager : MonoBehaviour {
@@ -18,8 +19,9 @@ namespace SlimUI.ModernMenu{
 
 		// sliders
 		public GameObject musicSlider;
+		
 
-
+		
 		public void Start()
 		{
 			// check difficulty
