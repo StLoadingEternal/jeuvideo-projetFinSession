@@ -8,6 +8,7 @@ TagManager:
   - fighterBullet
   - enemyBullet
   - PowerUp
+  - shield
   layers:
   - Default
   - TransparentFX

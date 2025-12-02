@@ -1,3 +1,4 @@
+using PowerUps;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
@@ -21,6 +22,7 @@ public class PlayerController : MonoBehaviour
     //Références
     private Rigidbody rb;
     private GameManager gameManagerScript;
+    
 
     void Start()
     {
@@ -87,12 +89,8 @@ public class PlayerController : MonoBehaviour
             Destroy(collision.gameObject); // détruire l'ennemi
             //Effet
         }
-
-        if (collision.gameObject.CompareTag("PowerUp"))
-        {
-            Destroy(collision.gameObject);
-            Debug.Log("Collision power up");
-        }
+        
+        
         
         
     }
