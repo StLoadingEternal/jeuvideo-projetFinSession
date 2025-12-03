@@ -1091,6 +1091,7 @@ MonoBehaviour:
   - {fileID: 1084014157635234140, guid: 1ff05a11e12b52445add8a56e77a0ed9, type: 3}
   - {fileID: 3601637500637684081, guid: a857f2232cc29534ca336b7c90694a1a, type: 3}
   - {fileID: 65573549453961392, guid: b3b77f278f80b764c821a3d2ec40068d, type: 3}
+  - {fileID: 5385254449323428017, guid: ae7e05da2de24de4d804d9da0990297d, type: 3}
   dropChance: 100
 --- !u!54 &2931963419706719761
 Rigidbody:

@@ -1,3 +1,5 @@
+using Player;
+
 namespace PowerUps
 {
     using UnityEngine;
@@ -6,8 +8,8 @@ using System.Collections;
 public class PowerUpManager : MonoBehaviour
 {
     [Header("Références")]
-    private Blaster blaster;
-    private PlayerController playerController;
+    public Blaster blaster;
+    private PlayerShield playerShield;
     
     // États
     private bool isMultiShotActive = false;
@@ -18,8 +20,8 @@ public class PowerUpManager : MonoBehaviour
     
     void Start()
     {
-        blaster = GetComponent<Blaster>();
-        playerController = GetComponent<PlayerController>();
+        
+        playerShield = GetComponent<PlayerShield>();
     }
     
     void Update()
@@ -54,7 +56,8 @@ public class PowerUpManager : MonoBehaviour
         
         if (blaster != null)
         {
-            // blaster.ActivateMultiShot(powerUpDuration);
+            
+             blaster.ActivateMultiShot(powerUpDuration);
         }
         
 
@@ -72,18 +75,14 @@ public class PowerUpManager : MonoBehaviour
     
     public void CollectShieldPowerUp()
     {
-        if (playerController != null)
+        if (playerShield != null)
         {
-            // playerController.ActivateShield(powerUpDuration);
+            playerShield.ActivateShield();
 
         }
     }
     
-    // ============ GETTERS ============
-    
     public bool IsMultiShotActive() { return isMultiShotActive; }
-    
-    // ============ UI ============
     
     
 }

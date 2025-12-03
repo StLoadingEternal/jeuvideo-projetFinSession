@@ -1,4 +1,5 @@
 using System.Collections;
+using PowerUps;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
@@ -23,6 +24,7 @@ public class PlayerController : MonoBehaviour
     //Références
     private Rigidbody rb;
     private GameManager gameManagerScript;
+    
 
     //Animation Accélération
     public float boostSpeed = 150f;

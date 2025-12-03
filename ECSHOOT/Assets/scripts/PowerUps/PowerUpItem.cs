@@ -77,6 +77,7 @@ public class PowerUpItem : MonoBehaviour
     {
         PowerUpManager powerUpManager = player.GetComponent<PowerUpManager>();
         
+        
         if (powerUpManager != null)
         {
             switch (type)
@@ -97,6 +98,7 @@ public class PowerUpItem : MonoBehaviour
                     powerUpManager.CollectShieldPowerUp();
                     break;
             }
+            Destroy(this.gameObject);
         }
         
         // Effets

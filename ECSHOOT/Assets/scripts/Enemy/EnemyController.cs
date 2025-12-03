@@ -1,4 +1,5 @@
 using System;
+using Player;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -140,9 +141,23 @@ public class EnemyController : MonoBehaviour
     //Collision avec une balle du joueur perd de la vie (Chaque balle enl�ve 1 vie)
     private void OnTriggerEnter(Collider other)
     {
-        if (!other.CompareTag("fighterBullet") & !other.CompareTag("Player"))
-            return;
 
+        if (!other.CompareTag("fighterBullet") & !other.CompareTag("Player"))
+        return;
+
+        if (other.gameObject.CompareTag("Player"))
+        {
+            PlayerShield playerShield = other.gameObject.GetComponent<PlayerShield>();
+            if (playerShield.IsShieldActive() )
+            {
+                Debug.Log("Shield active (degats) ");
+                Destroy(gameObject);
+                playerShield.TakeShieldHit(1);
+                
+            }
+            
+        }
+            
         //Degats De balles 
         if (other.CompareTag("fighterBullet"))
         {
