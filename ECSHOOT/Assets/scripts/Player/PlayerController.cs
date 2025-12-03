@@ -1,9 +1,11 @@
+using System.Collections;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
     // Vitesse gauche droite 
-    private float moveSpeed = 20f;
+    private float initialSpeed = 20f;
+    private float moveSpeed;
 
     //Vitesse d'avancement 
     //Rajouter effet accélération avec espace(public float boostForce = 150f; + Animation)
@@ -12,7 +14,7 @@ public class PlayerController : MonoBehaviour
     private float inclinaison = 20f;
 
     // limites gauche/droite de déplacements
-    private float maxX = 30f; 
+    private float maxX = 30f;
 
     [Header("Vies")]
     public int maxLives = 3; // vies de base
@@ -22,11 +24,24 @@ public class PlayerController : MonoBehaviour
     private Rigidbody rb;
     private GameManager gameManagerScript;
 
+    //Animation Accélération
+    public float boostSpeed = 150f;
+    public GameObject orbInstance;
+    private Animator orbAnimator;
+    public ParticleSystem boost_L;
+    public ParticleSystem boost_R;
+
+    //Hit Ennemi
+    public Material shipMaterial;
+    private float flashDuration = 0.15f;
+
     void Start()
     {
+        moveSpeed = initialSpeed;
         currentLives = maxLives;
         gameManagerScript = GameObject.Find("GameManager").GetComponent<GameManager>();
         rb = GetComponent<Rigidbody>();
+        orbAnimator = orbInstance.GetComponent<Animator>();
     }
 
     void FixedUpdate()
@@ -37,6 +52,10 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+
+        if (gameManagerScript.isGameOver)
+            return;
+
         // Déplacement horizontal
         float horizontalInput = Input.GetAxis("Horizontal");
 
@@ -55,45 +74,83 @@ public class PlayerController : MonoBehaviour
         transform.position = newPos;
 
         // Inclinaison
-        float rotateZ = -horizontalInput * inclinaison; 
+        float rotateZ = -horizontalInput * inclinaison;
         transform.localRotation = Quaternion.Euler(0, 0, rotateZ);
+
+        //acceleration
+        Acceleration();
     }
+
+
+    public void Acceleration()
+    {
+        if (Input.GetKey(KeyCode.Space))
+        {
+            orbAnimator.SetBool("IsCharging", true);
+            boost_L.Play();
+            boost_R.Play();
+            moveSpeed = 40f;
+        }
+        else
+        {
+            orbAnimator.SetBool("IsCharging", false);
+            boost_L.Stop();
+            boost_R.Stop();
+            moveSpeed = initialSpeed;
+
+        }
+    }
+
 
 
     //Perte de vie
     public void LoseLife(int amount)
     {
         currentLives -= amount;
-        
-        // Mettre à jour l'UI des vies
-        GameManager gameManager = FindObjectOfType<GameManager>();
-        if (gameManager != null)
+
+      
+        if (gameManagerScript != null)
         {
-            gameManager.UpdateLifeUI(currentLives);
-            
+            gameManagerScript.UpdateLifeUI(currentLives);
+
             if (currentLives <= 0)
             {
-                gameManager.GameOver();
+                gameManagerScript.GameOver();
             }
         }
     }
 
-
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Enemy"))
+       
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.CompareTag("Enemy"))
         {
-            LoseLife(3); // perdre 3 vies
-            Destroy(collision.gameObject); // détruire l'ennemi
+            StartCoroutine(HitFlash());
+            LoseLife(1);
+
             //Effet
         }
 
-        if (collision.gameObject.CompareTag("PowerUp"))
+        if (other.gameObject.CompareTag("PowerUp"))
         {
-            Destroy(collision.gameObject);
+            Destroy(other.gameObject);
             Debug.Log("Collision power up");
         }
-        
-        
     }
+
+    private IEnumerator HitFlash()
+    {
+       // Active le flash
+        shipMaterial.SetFloat("_FlashAmount", 1f);
+
+        yield return new WaitForSeconds(flashDuration);
+
+        // Retour normal
+        shipMaterial.SetFloat("_FlashAmount", 0f);
+    }
+
 }

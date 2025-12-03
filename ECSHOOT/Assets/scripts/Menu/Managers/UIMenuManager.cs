@@ -245,6 +245,7 @@ namespace SlimUI.ModernMenu{
 			}
 		}
 
+		//Naviagations Menus
 		public void PlayCampaign(){
 			PlaySwoosh();
 			exitMenu.SetActive(false);
@@ -252,14 +253,6 @@ namespace SlimUI.ModernMenu{
 			playMenu.SetActive(true);
 		}
 		
-		public void PlayCampaignMobile(){
-			PlaySwoosh();
-			exitMenu.SetActive(false);
-			if(extrasMenu) extrasMenu.SetActive(false);
-			playMenu.SetActive(true);
-			mainMenu.SetActive(false);
-		}
-
 		public void ReturnMenu(){
 			PlaySwoosh();
 			playMenu.SetActive(false);
@@ -273,6 +266,7 @@ namespace SlimUI.ModernMenu{
 			playMenu.SetActive(false);
 		}
 
+		//Position de la caméra (Pour l'animation du menu)
 		public void Position2(){
 			DisablePlayCampaign();
 			CameraObject.SetFloat("Animate",1);
@@ -282,7 +276,8 @@ namespace SlimUI.ModernMenu{
 			CameraObject.SetFloat("Animate",0);
 		}
 
-		void DisablePanels(){
+        //Désactivation et Navigation dans le Menu
+        void DisablePanels(){
 			PanelSkin.SetActive(false);
 			PanelGame.SetActive(false);
 			lineGame.SetActive(false);
@@ -300,6 +295,8 @@ namespace SlimUI.ModernMenu{
 			PanelSkin.SetActive(true);
 			lineSkin.SetActive(true);
 		}
+
+		//Sons Fx pour le menu
 
 		public void PlayHover(){
 			hoverSound.Play();
@@ -321,14 +318,8 @@ namespace SlimUI.ModernMenu{
 			DisablePlayCampaign();
 		}
 
-		public void AreYouSureMobile(){
-			PlaySwoosh();
-			exitMenu.SetActive(true);
-			if(extrasMenu) extrasMenu.SetActive(false);
-			mainMenu.SetActive(false);
-			DisablePlayCampaign();
-		}
 
+		//Ouvrir le menu des crédits
 		public void ExtrasMenu(){
 			PlaySwoosh();
 			playMenu.SetActive(false);
@@ -336,6 +327,7 @@ namespace SlimUI.ModernMenu{
 			exitMenu.SetActive(false);
 		}
 
+		//Quiter le jeu
 		public void QuitGame(){
 			#if UNITY_EDITOR
 				UnityEditor.EditorApplication.isPlaying = false;

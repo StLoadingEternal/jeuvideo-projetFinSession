@@ -11,7 +11,7 @@ public class EnemySpawner : MonoBehaviour
     private float spawnDistance = 100f; 
 
     // dispersion latérale d'apparition
-    private float spread = 20f;        
+    private float spread = 15f;        
 
     public void SpawnEnemy(float horizontalSpeed, int index, int currentWave)
     {

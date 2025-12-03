@@ -37,11 +37,11 @@ public class EnemyHealth : MonoBehaviour
     //l'ennemi prend des d�g�ts on met � jour l'ui
     public void TakeDamage(int damage)
     {
-        //d�g�ts
+        //degats
         currentHealth -= damage;
         if (currentHealth < 0) 
             currentHealth = 0;
-        //UI m�j
+        //UI maj
         UpdateHealthUI();
 
         //Il meurt s'il n'a plus de vie
@@ -49,7 +49,7 @@ public class EnemyHealth : MonoBehaviour
             Die();
     }
 
-    //m�j Barre de vie
+    //maj Barre de vie
     void UpdateHealthUI()
     {
         if (healthBar != null)
@@ -69,7 +69,7 @@ public class EnemyHealth : MonoBehaviour
         if (gameManager != null)
             gameManager.OnEnemyDestroyed();
 
-        // D�truit l�ennemi
+        // Detruit ennemi
         Destroy(gameObject);
 
         // Effet visuel

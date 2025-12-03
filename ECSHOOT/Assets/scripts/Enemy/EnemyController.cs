@@ -140,16 +140,25 @@ public class EnemyController : MonoBehaviour
     //Collision avec une balle du joueur perd de la vie (Chaque balle enl�ve 1 vie)
     private void OnTriggerEnter(Collider other)
     {
-        if (!other.CompareTag("fighterBullet"))
+        if (!other.CompareTag("fighterBullet") & !other.CompareTag("Player"))
             return;
 
-        Destroy(other.gameObject);
-
-        //D�g�ts
-        health.TakeDamage(1);
-        if (health.IsDead)
+        //Degats De balles 
+        if (other.CompareTag("fighterBullet"))
         {
-            DropPowerUpsSimple();
+            Destroy(other.gameObject);
+            health.TakeDamage(1);
+
+            if (health.IsDead)
+            {
+                DropPowerUpsSimple();
+            }
+        }
+       
+        //Dégats collision avec le joueur
+        if (other.CompareTag("Player"))
+        {
+            health.TakeDamage(7); //Mort direct de l'ennemi s'il y'a collision avec le vaisseau
         }
     }
     

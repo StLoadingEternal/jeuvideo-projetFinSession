@@ -22,7 +22,7 @@ public class GameManager : MonoBehaviour
     private int currentWave = 0;
     public int enemiesAlive = 0;
     private int score = 0;
-    private float waveDuration = 10f;
+    private float waveDuration = 20f;
 
     //Joueur
     public GameObject player;
@@ -32,8 +32,9 @@ public class GameManager : MonoBehaviour
     private EnemySpawner enemySpawnerScript;
 
     //Game over
-    private bool isGameOver;
-    
+    public bool isGameOver;
+    public ParticleSystem destructionParticle;
+
     //Sauvegarde
     private SaveSystem saveSystem;
     
@@ -56,29 +57,23 @@ public class GameManager : MonoBehaviour
         UpdateLifeUI();
         gameOverPanel.SetActive(false);
 
-        //R�ference sur le menu pause
+        //Réference sur le menu pause
         menuPauseScript = MenuPause.GetComponent<MenuPause>();
-
-        // Charger la sauvegarde si elle existe
-        LoadGame();
 
         StartCoroutine(StartWave());
     }
 
     private void Update()
     {
+        if (isGameOver)
+            return;
+
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             if (Time.timeScale == 1)
                 menuPauseScript.PauseGame();
             else
                menuPauseScript.ResumeGame();
-        }
-
-        // Sauvegarde manuelle (pour test)
-        if (Input.GetKeyDown(KeyCode.F5))
-        {
-            SaveGame();
         }
     }
 
@@ -162,11 +157,19 @@ public class GameManager : MonoBehaviour
     {
         isGameOver = true;
         gameOverPanel.SetActive(true);
-        
-        // Supprimer la sauvegarde quand game over
+
+        destructionParticle.Play();
+
+        // Arrêter le décompte
+        if (countdownCoroutine != null)
+            StopCoroutine(countdownCoroutine);
+
+        // Supprimer la sauvegarde
         DeleteSave();
-        
-        Time.timeScale = 0f;
+
+        // Détruire les ennemis
+        DestroyAllEnemies();
+
     }
 
     public void RetryGame()
@@ -176,7 +179,7 @@ public class GameManager : MonoBehaviour
         
         // Recharge la scène actuelle
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-        Time.timeScale = 1f;
+
     }
 
     //Affiche un texte au d�but de chague vague
@@ -199,8 +202,8 @@ public class GameManager : MonoBehaviour
     //D�buter une vague
     IEnumerator StartWave()
     {
-        // Sauvegarde au début de chaque vague
-        SaveGame();
+        if (isGameOver)
+            yield break;
 
         //VAgue suivante
         currentWave++;
@@ -248,6 +251,9 @@ public class GameManager : MonoBehaviour
 
         while (countdown > 0)
         {
+            if (isGameOver)
+                yield break;
+
             if (countdownText != null)
                 countdownText.text = "Temps : " + Mathf.Ceil(countdown);
             yield return new WaitForSeconds(1f);
@@ -262,12 +268,11 @@ public class GameManager : MonoBehaviour
             if (playerControllerScript != null)
             {
                 playerControllerScript.LoseLife(1);
-                // Sauvegarde après avoir perdu une vie
-                SaveGame();
             }
 
+            //Détruire les ennemis à la fin du temps 
             DestroyAllEnemies();
-            enemiesAlive = 0;
+
         }
 
         // Vérifier si le jeu n'est pas terminé avant de lancer une nouvelle vague
@@ -282,7 +287,9 @@ public class GameManager : MonoBehaviour
         foreach (var enemy in GameObject.FindGameObjectsWithTag("Enemy"))
         {
             Destroy(enemy);
+            
         }
+        enemiesAlive = 0;
     }
 
     //Score augmente � la destruction de chaque ennemi
@@ -291,8 +298,6 @@ public class GameManager : MonoBehaviour
         enemiesAlive--;
         score += 100;
         UpdateScoreUI();
-        
-        // Sauvegarde automatique quand un ennemi est détruit
-        SaveGame();
+       
     }
 }
