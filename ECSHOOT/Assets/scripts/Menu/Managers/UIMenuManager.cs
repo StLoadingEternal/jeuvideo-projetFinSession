@@ -30,7 +30,7 @@ namespace SlimUI.ModernMenu{
         public enum Theme {custom1, custom2, custom3};
         [Header("THEME SETTINGS")]
         public Theme theme;
-        private int themeIndex = 0;
+        private int themeIndex;
         public ThemedUIData themeController;
 
         [Header("PANELS")]
@@ -69,6 +69,7 @@ namespace SlimUI.ModernMenu{
 		void Start(){
 			CameraObject = transform.GetComponent<Animator>();
 
+			themeIndex = 0;
 			playMenu.SetActive(false);
 			exitMenu.SetActive(false);
 			if(extrasMenu) extrasMenu.SetActive(false);

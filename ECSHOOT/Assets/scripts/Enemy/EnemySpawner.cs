@@ -47,16 +47,17 @@ public class EnemySpawner : MonoBehaviour
             
         }
 
+        //J'ai augmenté les vies pour rendre plus challenge
         if (enemyHealth != null)
         {
             if (currentWave < 3)
-                enemyHealth.maxHealth = 2;
+                enemyHealth.maxHealth = 6;
             else if (currentWave < 5)
-                enemyHealth.maxHealth = 3;
+                enemyHealth.maxHealth = 8;
             else if (currentWave < 8)
-                enemyHealth.maxHealth = 4;
+                enemyHealth.maxHealth = 12;
             else
-                enemyHealth.maxHealth = 5;
+                enemyHealth.maxHealth = 16;
         }
     }
 

@@ -54,6 +54,7 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        
 
         if (gameManagerScript.isGameOver)
             return;
@@ -81,6 +82,7 @@ public class PlayerController : MonoBehaviour
 
         //acceleration
         Acceleration();
+
     }
 
 

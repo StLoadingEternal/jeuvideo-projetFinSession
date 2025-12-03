@@ -1,12 +1,24 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+
+
 
 public class GameSettingsPanel : MonoBehaviour
 {
     [Header("UI Handles")]
     public Slider musicVolumeSlider;
-    public Toggle fxToggle;
-    public Toggle fullscreenToggle;
+
+    [Header("Buttons with text")]
+    public Button fxButton;
+    public TextMeshPro fxButtonText;
+
+    public Button fullscreenButton;
+    public TextMeshPro fullscreenButtonText;
+
+    // ON / OFF colors
+    private Color onColor = new Color(0.2f, 0.9f, 0.2f);   // vert
+    private Color offColor = new Color(0.9f, 0.2f, 0.2f);  // rouge
 
     void Start()
     {
@@ -14,48 +26,61 @@ public class GameSettingsPanel : MonoBehaviour
         AddListeners();
     }
 
-    // Initialise les handles avec les valeurs actuelles
     void InitializeHandles()
     {
         if (musicVolumeSlider != null)
             musicVolumeSlider.value = GameSettings.MusicVolume;
 
-        if (fxToggle != null)
-            fxToggle.isOn = GameSettings.FXEnabled;
-
-        if (fullscreenToggle != null)
-            fullscreenToggle.isOn = GameSettings.Fullscreen;
+        UpdateFXButtonDisplay();
+        UpdateFullscreenButtonDisplay();
     }
 
-    // Ajoute les listeners pour appeler Update quand l’utilisateur change le handle
     void AddListeners()
     {
         if (musicVolumeSlider != null)
             musicVolumeSlider.onValueChanged.AddListener(UpdateMusicVolume);
 
-        if (fxToggle != null)
-            fxToggle.onValueChanged.AddListener(UpdateFXEnabled);
+        if (fxButton != null)
+            fxButton.onClick.AddListener(ToggleFX);
 
-        if (fullscreenToggle != null)
-            fullscreenToggle.onValueChanged.AddListener(UpdateFullscreen);
+        if (fullscreenButton != null)
+            fullscreenButton.onClick.AddListener(ToggleFullscreen);
     }
 
-    // ===== Fonctions d’update =====
+    // -------- UPDATE --------
+
     void UpdateMusicVolume(float value)
     {
         GameSettings.MusicVolume = value;
-        AudioListener.volume = value; // applique immédiatement
+        AudioListener.volume = value;
     }
 
-    void UpdateFXEnabled(bool value)
+    void ToggleFX()
     {
-        GameSettings.FXEnabled = value;
-        // ici tu peux activer/désactiver les effets sonores
+        GameSettings.FXEnabled = !GameSettings.FXEnabled;
+        UpdateFXButtonDisplay();
     }
 
-    void UpdateFullscreen(bool value)
+    void ToggleFullscreen()
     {
-        GameSettings.Fullscreen = value;
-        Screen.fullScreen = value;
+        GameSettings.Fullscreen = !GameSettings.Fullscreen;
+        Screen.fullScreen = GameSettings.Fullscreen;
+        UpdateFullscreenButtonDisplay();
+    }
+
+    // -------- UI DISPLAY --------
+
+    void UpdateFXButtonDisplay()
+    {
+        bool isOn = GameSettings.FXEnabled;
+        fxButtonText.text = isOn ? "ON" : "OFF";
+        fxButtonText.color = isOn ? onColor : offColor;
+    }
+
+    void UpdateFullscreenButtonDisplay()
+    {
+        bool isOn = GameSettings.Fullscreen;
+        fullscreenButtonText.text = isOn ? "ON" : "OFF";
+        fullscreenButtonText.color = isOn ? onColor : offColor;
     }
 }

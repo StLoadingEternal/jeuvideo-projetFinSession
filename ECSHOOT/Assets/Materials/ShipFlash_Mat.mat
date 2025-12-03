@@ -21,7 +21,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: ShipFlash_Mat
-  m_Shader: {fileID: -6465566751694194690, guid: 57b0f68897fd2084f9709b2c47c9872f, type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 7d6cae1bc7aab424990ba6073750a995, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []

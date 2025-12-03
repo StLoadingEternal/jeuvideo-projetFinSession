@@ -173,7 +173,7 @@ public class EnemyController : MonoBehaviour
         //Dégats collision avec le joueur
         if (other.CompareTag("Player"))
         {
-            health.TakeDamage(7); //Mort direct de l'ennemi s'il y'a collision avec le vaisseau
+            health.TakeDamage(16); //Mort direct de l'ennemi s'il y'a collision avec le vaisseau
         }
     }
     
