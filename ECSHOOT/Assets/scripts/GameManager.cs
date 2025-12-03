@@ -22,7 +22,7 @@ public class GameManager : MonoBehaviour
     private int currentWave = 0;
     public int enemiesAlive = 0;
     private int score = 0;
-    private float waveDuration = 20f;
+    private float waveDuration = 10f;
 
     //Joueur
     public GameObject player;
