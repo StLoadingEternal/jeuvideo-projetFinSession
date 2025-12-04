@@ -10,13 +10,19 @@ public class EnemySpawner : MonoBehaviour
     private float spawnDistance = 100f; 
 
     // dispersion latérale d'apparition
-    private float spread = 15f;        
+    private float spread = 15f;
+
+    GameManager gameManagerScript;
+
+    private void Start()
+    {
+        gameManagerScript = GameObject.Find("GameManager").GetComponent<GameManager>();
+    }
 
     public void SpawnEnemy(float horizontalSpeed, int index, int currentWave)
     {
         // Vérifier si c'est une vague de boss via le GameManager
-        GameManager gameManager = FindObjectOfType<GameManager>();
-        if (gameManager != null && gameManager.IsBossWave)
+        if (gameManagerScript != null && gameManagerScript.IsBossWave)
         {
             return; // Ne pas spawn d'ennemis normaux pendant la vague de boss
         }
@@ -57,13 +63,13 @@ public class EnemySpawner : MonoBehaviour
         if (enemyHealth != null)
         {
             if (currentWave < 3)
-                enemyHealth.maxHealth = 6;
+                enemyHealth.maxHealth = 10;
             else if (currentWave < 5)
-                enemyHealth.maxHealth = 8;
-            else if (currentWave < 8)
                 enemyHealth.maxHealth = 12;
-            else
+            else if (currentWave < 8)
                 enemyHealth.maxHealth = 16;
+            else
+                enemyHealth.maxHealth = 20;
         }
     }
 }
