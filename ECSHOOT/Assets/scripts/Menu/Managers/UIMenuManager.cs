@@ -19,7 +19,9 @@ namespace SlimUI.ModernMenu{
         [Tooltip("The Menu for when the EXIT button is clicked")]
         public GameObject exitMenu;
         [Tooltip("Optional 4th Menu")]
-        public GameObject extrasMenu;
+        public GameObject creditsMenu;
+		[Tooltip("The Menu for when the LOAD button is clicked")]
+		public GameObject savesMenu;
 
         // SAUVEGARDE - Nouveaux éléments
         [Header("SAUVEGARDE")]
@@ -27,10 +29,14 @@ namespace SlimUI.ModernMenu{
         public TextMeshProUGUI saveInfoText;
         public GameObject newGameConfirmationPanel;
 
+        [Header("LOAD SAVES")]
+        public Button save1;
+        public Button save2;
+        public Button save3;
+
         public enum Theme {custom1, custom2, custom3};
         [Header("THEME SETTINGS")]
         public Theme theme;
-        private int themeIndex;
         public ThemedUIData themeController;
 
         [Header("PANELS")]
@@ -47,16 +53,7 @@ namespace SlimUI.ModernMenu{
         public GameObject lineGame;
         [Tooltip("Highlight Image for when VIDEO Tab is selected in Settings")]
         public GameObject lineSkin;
-      
-
-        [Header("LOADING SCREEN")]
-		[Tooltip("If this is true, the loaded scene won't load until receiving user input")]
-		public bool waitForInput = true;
-        public GameObject loadingMenu;
-		[Tooltip("The loading bar Slider UI element in the Loading Screen")]
-        // public Slider loadingBar;
-        public TMP_Text loadPromptText;
-		public KeyCode userPromptKey;
+     
 
 		[Header("SFX")]
         [Tooltip("The GameObject holding the Audio Source component for the HOVER SOUND")]
@@ -69,10 +66,10 @@ namespace SlimUI.ModernMenu{
 		void Start(){
 			CameraObject = transform.GetComponent<Animator>();
 
-			themeIndex = 0;
+			
 			playMenu.SetActive(false);
 			exitMenu.SetActive(false);
-			if(extrasMenu) extrasMenu.SetActive(false);
+			if(creditsMenu) creditsMenu.SetActive(false);
 			if(newGameConfirmationPanel) newGameConfirmationPanel.SetActive(false);
 			firstMenu.SetActive(true);
 			mainMenu.SetActive(true);
@@ -222,20 +219,22 @@ namespace SlimUI.ModernMenu{
 		
 		
 
-		//Naviagations Menus
+		//Naviagations Main Menus
 		public void PlayCampaign(){
 			PlaySwoosh();
 			exitMenu.SetActive(false);
-			if(extrasMenu) extrasMenu.SetActive(false);
-			playMenu.SetActive(true);
+			if(creditsMenu) creditsMenu.SetActive(false);
+            if (savesMenu) savesMenu.SetActive(false);
+            playMenu.SetActive(true);
 		}
 		
 		public void ReturnMenu(){
 			PlaySwoosh();
 			playMenu.SetActive(false);
-			if(extrasMenu) extrasMenu.SetActive(false);
+			if(creditsMenu) creditsMenu.SetActive(false);
 			exitMenu.SetActive(false);
 			if(newGameConfirmationPanel) newGameConfirmationPanel.SetActive(false);
+			if (savesMenu) savesMenu.SetActive(false);
 			mainMenu.SetActive(true);
 		}
 
@@ -243,8 +242,37 @@ namespace SlimUI.ModernMenu{
 			playMenu.SetActive(false);
 		}
 
-		//Position de la caméra (Pour l'animation du menu)
-		public void Position2(){
+        // Are You Sure - Quit Panel Pop Up
+        public void AreYouSure()
+        {
+            PlaySwoosh();
+            exitMenu.SetActive(true);
+            if(creditsMenu) creditsMenu.SetActive(false);
+            if (savesMenu) savesMenu.SetActive(false);
+            DisablePlayCampaign();
+        }
+
+        //Ouvrir le menu des crédits
+        public void CreditsMenu()
+        {
+            PlaySwoosh();
+            playMenu.SetActive(false);
+            if (creditsMenu) creditsMenu.SetActive(true);
+            if (savesMenu) savesMenu.SetActive(false);
+            exitMenu.SetActive(false);
+        }
+
+        //Ouvrir le menu des sauvegardes
+        public void SavesMenus()
+        {
+            PlaySwoosh();
+            if (creditsMenu) creditsMenu.SetActive(false);
+            if (savesMenu) savesMenu.SetActive(true);
+            exitMenu.SetActive(false);
+        }
+
+        //Position de la caméra (Pour l'animation du menu)
+        public void Position2(){
 			DisablePlayCampaign();
 			CameraObject.SetFloat("Animate",1);
 		}
@@ -253,7 +281,8 @@ namespace SlimUI.ModernMenu{
 			CameraObject.SetFloat("Animate",0);
 		}
 
-        //Désactivation et Navigation dans le Menu
+
+        //Désactivation et Navigation dans le Menu Settings
         void DisablePanels(){
 			PanelSkin.SetActive(false);
 			PanelGame.SetActive(false);
@@ -287,22 +316,6 @@ namespace SlimUI.ModernMenu{
 			swooshSound.Play();
 		}
 
-		// Are You Sure - Quit Panel Pop Up
-		public void AreYouSure(){
-			PlaySwoosh();
-			exitMenu.SetActive(true);
-			if(extrasMenu) extrasMenu.SetActive(false);
-			DisablePlayCampaign();
-		}
-
-
-		//Ouvrir le menu des crédits
-		public void ExtrasMenu(){
-			PlaySwoosh();
-			playMenu.SetActive(false);
-			if(extrasMenu) extrasMenu.SetActive(true);
-			exitMenu.SetActive(false);
-		}
 
 		//Quiter le jeu
 		public void QuitGame(){
