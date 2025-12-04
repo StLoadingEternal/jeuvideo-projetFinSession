@@ -29,7 +29,6 @@ public class PlayerController : MonoBehaviour
 
     //Animation Accélération
     public float boostSpeed = 150f;
-    public GameObject orbInstance;
     public ParticleSystem boost_L;
     public ParticleSystem boost_R;
 
@@ -47,10 +46,10 @@ public class PlayerController : MonoBehaviour
         currentLives = maxLives;
         gameManagerScript = GameObject.Find("GameManager").GetComponent<GameManager>();
         rb = GetComponent<Rigidbody>();
-        orbAnimator = orbInstance.GetComponent<Animator>();
-        
+
         if (shieldController == null)
             shieldController = GetComponentInChildren<ShieldShaderController>();
+
     }
 
     void FixedUpdate()
