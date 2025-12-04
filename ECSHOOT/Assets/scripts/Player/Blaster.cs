@@ -10,7 +10,10 @@ public class Blaster : MonoBehaviour
     private float nextFire = 0f;
 
     private bool isMultiShot = true;
-    
+
+    [Header("Audio")]
+    public AudioSource shotSound;
+
     // AJOUTS POUR LES POWER-UPS
     private bool isFireRateBoosted = false;
     private float fireRateMultiplier = 5f; // Tire 2x plus vite
@@ -41,12 +44,24 @@ public class Blaster : MonoBehaviour
 
             if (isMultiShot)
             {
+                if (GameSettings.FXEnabled) {
+                    //shoot sound
+                    shotSound.Play(); 
+                }
+                
+
                 // Tirer 2 projectiles dans la même direction
                 Shoot();
                 Shoot(0.8f);
             }
             else
             {
+                if (GameSettings.FXEnabled)
+                {
+                    //shoot sound
+                    shotSound.Play();
+                }
+
                 Shoot();
             }
         }

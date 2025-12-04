@@ -19,6 +19,7 @@ public class EnemyHealth : MonoBehaviour
 
     public bool IsDead => isDead;
 
+    [Header("Effect")]
     //Particules explosion
     public ParticleSystem hitEffectPrefab;
 
@@ -81,5 +82,8 @@ public class EnemyHealth : MonoBehaviour
             effect.Play();
             Destroy(effect.gameObject, 2f);
         }
+
+       
+        
     }
 }

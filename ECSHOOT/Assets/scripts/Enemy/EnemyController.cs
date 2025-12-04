@@ -5,20 +5,24 @@ using UnityEngine;
 
 public class EnemyController : MonoBehaviour
 {
-    [Header("D�placement horizontal")]
+    [Header("Deplacement horizontal")]
     public float moveSpeed; // vitesse horizontale
-    public float maxX = 25f;      // limite droite
-    public float minX = -25f;     // limite gauche
+    private float maxX = 25f;      // limite droite
+    private float minX = -25f;     // limite gauche
 
-    [Header("D�placement zig zag")]
-    public float zigzagFrequency = 5f;
-    public float zigzagMagnitude = 5f;
+    [Header("Deplacement zig zag")]
+    private float zigzagFrequency = 5f;
+    private float zigzagMagnitude = 5f;
 
-    [Header("D�placement wave")]
-    public float waveSpeed = 2f;
+    [Header("Deplacement wave")]
+    private float waveSpeed = 2f;
 
-    [Header("D�placement stopGo")]
+    [Header("Deplacement stopGo")]
     private float stopTimer;
+
+    [Header("Audio")]
+    private GameObject destructionObject;
+    private AudioSource destructionSound;
 
     //Enum Mouvements
     public enum MovementType
@@ -32,7 +36,7 @@ public class EnemyController : MonoBehaviour
 
     private MovementType[] types = { MovementType.Straight, MovementType.ZigZag, MovementType.Wave, MovementType.StopAndGo};
 
-    [Header("Mouvement vari�s")]
+    [Header("Mouvement varies")]
     private MovementType movementType;
 
     private int direction = 1;    // direction de d�plcement horizontal (1 = vers la droite, -1 = vers la gauche)
@@ -47,6 +51,10 @@ public class EnemyController : MonoBehaviour
 
     private void Start()
     {
+        //Récuperer la référence sur l'audio source
+        destructionObject = GameObject.Find("crashEnemySound");
+        destructionSound = destructionObject.GetComponent<AudioSource>();
+
         health = GetComponent<EnemyHealth>();
         playerControllerScript = player.GetComponent<PlayerController>();
         gameManagerScript = GameObject.Find("GameManager").GetComponent<GameManager>();
@@ -165,9 +173,16 @@ public class EnemyController : MonoBehaviour
 
             if (health.IsDead)
             {
+                if (GameSettings.FXEnabled)
+                {
+                    //Musique de destruction
+                    destructionSound.Play();
+                }
                 DropPowerUpsSimple();
             }
         }
+
+        
     }
     
     

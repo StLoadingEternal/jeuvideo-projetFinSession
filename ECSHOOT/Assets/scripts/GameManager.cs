@@ -34,6 +34,11 @@ public class GameManager : MonoBehaviour
     public float bossSpawnDistance = 120f; // Distance de spawn (augmentez cette valeur)
     public float bossSpacing = 20f;        // Espace entre plusieurs bosses
 
+    [Header("Audio")]
+    public AudioSource gameOverSound;
+    public AudioSource themeSound;
+    public AudioSource destructionPlayerSound;
+
     public bool IsBossWave => isBossWave;
 
     public int bossAlive = 0;
@@ -63,8 +68,12 @@ public class GameManager : MonoBehaviour
         playerControllerScript = player.GetComponent<PlayerController>();
         enemySpawnerScript = GameObject.Find("EnemySpawner").GetComponent<EnemySpawner>();
 
-        //Système de sauvegarde
+        //Système de sauvegarde (Static à la place)
         saveSystem = new SaveSystem();
+
+        //Appliquer la préférences de son et d'écran
+        AudioListener.volume = GameSettings.MusicVolume;
+        Screen.fullScreen = GameSettings.Fullscreen;
 
         //Initialiser correctement l'UI
         UpdateScoreUI();
@@ -184,6 +193,10 @@ public class GameManager : MonoBehaviour
         // Détruire les ennemis
         DestroyAllEnemies();
 
+        //Jouer le son GameOver
+        themeSound.Stop();
+        destructionPlayerSound.Play();
+        gameOverSound.Play();
     }
 
     public void RetryGame()
