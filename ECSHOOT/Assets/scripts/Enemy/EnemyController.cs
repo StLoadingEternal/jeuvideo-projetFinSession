@@ -156,13 +156,23 @@ public class EnemyController : MonoBehaviour
         if (other.gameObject.CompareTag("Player"))
         {
             PlayerShield playerShield = other.gameObject.GetComponent<PlayerShield>();
-            if (playerShield.IsShieldActive() )
+
+            health.TakeDamage(16);//le vaisseau ennemi est toujours détruit (Dans le if ca créait des bugs)
+
+            //if (playerShield.IsShieldActive())
+            //{
+            //    Debug.Log("Shield active (degats) ");
+            //    playerShield.TakeShieldHit(1);
+
+            //}
+
+            if (GameSettings.FXEnabled)
             {
-                Debug.Log("Shield active (degats) ");
-                playerShield.TakeShieldHit(1);
-                health.TakeDamage(16);
+                //Musique de destruction
+                destructionSound.Play();
             }
-            
+            DropPowerUpsSimple();
+
         }
             
         //Degats De balles 

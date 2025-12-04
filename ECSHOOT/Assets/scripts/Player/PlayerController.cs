@@ -147,7 +147,8 @@ public class PlayerController : MonoBehaviour
         // PRENDRE UN HIT
         if (other.CompareTag("Enemy"))
         {
-            HitFlash();
+            //Shader de hit
+            StartCoroutine(HitFlash());
 
             Vector3 hitPoint = other.ClosestPoint(transform.position);
             
@@ -160,7 +161,7 @@ public class PlayerController : MonoBehaviour
                 // Si le shield est encore actif, arrêter ici
                 if (shieldController.GetShieldHealth() > 0)
                 {
-                    Destroy(other.gameObject);
+                    //Destroy(other.gameObject);L'enemi gère déjà sa destruction avec animation
                     return;
                 }
             }

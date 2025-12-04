@@ -22,7 +22,7 @@ public class GameManager : MonoBehaviour
     private int currentWave = 0;
     public int enemiesAlive = 0;
     private int score = 0;
-    private float waveDuration = 10f;
+    private float waveDuration = 30f;
 
     [Header("Système de Boss")]
     public GameObject bossPrefab;
@@ -151,14 +151,9 @@ public class GameManager : MonoBehaviour
     // ============ GESTION DU JEU ============
 
     //Mis à jour vie
-    public void UpdateLifeUI(int currentLives = -1)
+    public void UpdateLifeUI(int currentLives = 3)
     {
-        int livesToDisplay = currentLives;
-        
-        if (currentLives == -1 && playerControllerScript != null)
-        {
-            livesToDisplay = playerControllerScript.currentLives;
-        }
+        int livesToDisplay = playerControllerScript.currentLives;
 
         for (int i = 0; i < lifeImages.Length; i++)
         {
