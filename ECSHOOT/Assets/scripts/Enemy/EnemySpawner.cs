@@ -1,6 +1,5 @@
 using UnityEngine;
 
-
 public class EnemySpawner : MonoBehaviour
 {
     //références
@@ -15,6 +14,13 @@ public class EnemySpawner : MonoBehaviour
 
     public void SpawnEnemy(float horizontalSpeed, int index, int currentWave)
     {
+        // Vérifier si c'est une vague de boss via le GameManager
+        GameManager gameManager = FindObjectOfType<GameManager>();
+        if (gameManager != null && gameManager.IsBossWave)
+        {
+            return; // Ne pas spawn d'ennemis normaux pendant la vague de boss
+        }
+
         // Direction devant le joueur sur le plan XZ
         Vector3 direction = player.forward;
         direction.y = 0;
@@ -60,6 +66,4 @@ public class EnemySpawner : MonoBehaviour
                 enemyHealth.maxHealth = 16;
         }
     }
-
 }
-

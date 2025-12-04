@@ -24,6 +24,20 @@ public class GameManager : MonoBehaviour
     private int score = 0;
     private float waveDuration = 10f;
 
+    [Header("Système de Boss")]
+    public GameObject bossPrefab;
+    public int bossSpawnWaveInterval = 4; // Apparaît toutes les 4 vagues
+    private int bossAppearanceCount = 0;
+    private bool isBossWave = false;
+    
+    [Header("Paramètres de spawn du Boss")]
+    public float bossSpawnDistance = 120f; // Distance de spawn (augmentez cette valeur)
+    public float bossSpacing = 20f;        // Espace entre plusieurs bosses
+
+    public bool IsBossWave => isBossWave;
+
+    public int bossAlive = 0;
+
     //Joueur
     public GameObject player;
     private PlayerController playerControllerScript;
@@ -38,14 +52,14 @@ public class GameManager : MonoBehaviour
     //Sauvegarde
     private SaveSystem saveSystem;
     
-    //R�f�rence sur la couroutine du d�compte
+    //Référence sur la couroutine du décompte
     private Coroutine countdownCoroutine;
-    //R�f�rences sur le menu pause
+    //Références sur le menu pause
     private MenuPause menuPauseScript;
 
     private void Start()
     {
-        //R�f�rences sur le joueur et l'ennemi spawner
+        //Références sur le joueur et l'ennemi spawner
         playerControllerScript = player.GetComponent<PlayerController>();
         enemySpawnerScript = GameObject.Find("EnemySpawner").GetComponent<EnemySpawner>();
 
@@ -57,7 +71,7 @@ public class GameManager : MonoBehaviour
         UpdateLifeUI();
         gameOverPanel.SetActive(false);
 
-        //Réference sur le menu pause
+        //Référence sur le menu pause
         menuPauseScript = MenuPause.GetComponent<MenuPause>();
 
         StartCoroutine(StartWave());
@@ -127,7 +141,7 @@ public class GameManager : MonoBehaviour
 
     // ============ GESTION DU JEU ============
 
-    //Mis � jour vie
+    //Mis à jour vie
     public void UpdateLifeUI(int currentLives = -1)
     {
         int livesToDisplay = currentLives;
@@ -146,7 +160,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    //Mis � jour score
+    //Mis à jour score
     void UpdateScoreUI()
     {
         if (scoreText != null)
@@ -182,7 +196,7 @@ public class GameManager : MonoBehaviour
 
     }
 
-    //Affiche un texte au d�but de chague vague
+    //Affiche un texte au début de chaque vague
     public IEnumerator AfficherVague()
     {
         if (waveText != null)
@@ -199,20 +213,34 @@ public class GameManager : MonoBehaviour
             indications.gameObject.SetActive(false);
     }
 
-    //D�buter une vague
+    //Débuter une vague
     IEnumerator StartWave()
     {
         if (isGameOver)
             yield break;
 
-        //VAgue suivante
+        //Vague suivante
         currentWave++;
         UpdateScoreUI();
         UpdateLifeUI();
 
-        //On affiche le texte avant de commencer
-        yield return StartCoroutine(AfficherVague());
+        // Vérifier si c'est une vague de boss
+        isBossWave = (currentWave % bossSpawnWaveInterval == 0 && currentWave > 0);
+        
+        if (isBossWave)
+        {
+            yield return StartCoroutine(SpawnBossWave());
+        }
+        else
+        {
+            yield return StartCoroutine(AfficherVague());
+            StartNormalWave();
+        }
+    }
 
+    // NOUVELLE MÉTHODE : Démarrer une vague normale
+    void StartNormalWave()
+    {
         // Calcul de la difficulté
         int totalEnemies = initialEnemies + (currentWave - 1);
         float horizontalSpeed = 10f + (currentWave - 1) * 2f;
@@ -220,6 +248,14 @@ public class GameManager : MonoBehaviour
         int spawnedEnemies = 0;
 
         // Spawn des ennemis
+        StartCoroutine(SpawnNormalEnemies(totalEnemies, horizontalSpeed));
+    }
+
+    // NOUVELLE MÉTHODE : Spawn progressif des ennemis normaux
+    IEnumerator SpawnNormalEnemies(int totalEnemies, float horizontalSpeed)
+    {
+        int spawnedEnemies = 0;
+
         while (spawnedEnemies < totalEnemies)
         {
             if (enemiesAlive < 10)
@@ -227,6 +263,9 @@ public class GameManager : MonoBehaviour
                 enemySpawnerScript.SpawnEnemy(horizontalSpeed, spawnedEnemies, currentWave);
                 enemiesAlive++;
                 spawnedEnemies++;
+                
+                // Petite pause entre chaque spawn
+                yield return new WaitForSeconds(0.5f);
             }
             else
             {
@@ -235,6 +274,92 @@ public class GameManager : MonoBehaviour
         }
 
         StartCountdown();
+    }
+
+    // Vague de boss
+    IEnumerator SpawnBossWave()
+    {
+        // Afficher un message spécial pour le boss
+        if (waveText != null)
+            waveText.text = "BOSS VAGUE " + bossAppearanceCount;
+        if (warningText != null)
+            warningText.text = "Attention! Boss en approche!";
+        
+        if (indications != null)
+            indications.gameObject.SetActive(true);
+        
+        yield return new WaitForSeconds(3f);
+        
+        if (indications != null)
+            indications.gameObject.SetActive(false);
+        
+        // Spawn le(s) boss
+        SpawnBoss();
+        
+        // Lancer le décompte pour le boss (plus long)
+        StartBossCountdown();
+    }
+
+    void SpawnBoss()
+    {
+        if (bossPrefab == null) return;
+    
+        int numberOfBosses = (bossAppearanceCount >= 3) ? 2 : 1;
+    
+        for (int i = 0; i < numberOfBosses; i++)
+        {
+            float spawnDistance = 150f;
+        
+            Vector3 direction = player.transform.forward;
+            direction.y = 0;
+            direction.Normalize();
+        
+            Vector3 spawnPos = player.transform.position + direction * spawnDistance;
+        
+            // Espacement pour plusieurs bosses
+            if (numberOfBosses > 1)
+            {
+                float spacing = 25f; // Augmenté l'espacement
+                float startX = -(spacing * (numberOfBosses - 1)) / 2f;
+                spawnPos += player.transform.right * (startX + i * spacing);
+            }
+        
+            spawnPos.y = player.transform.position.y;
+        
+            // Orientation vers le joueur
+            Quaternion spawnRot = Quaternion.LookRotation(player.transform.position - spawnPos);
+        
+            GameObject boss = Instantiate(bossPrefab, spawnPos, spawnRot);
+        
+            // Configurer la santé
+            EnemyHealth bossHealth = boss.GetComponent<EnemyHealth>();
+            if (bossHealth != null)
+            {
+                bossHealth.maxHealth = 20 + (bossAppearanceCount * 10);
+            }
+        
+            bossAlive++;
+            enemiesAlive++;
+        }
+    }
+
+    Vector3 CalculateBossSpawnPosition(int index, int totalBosses)
+    {
+        Vector3 direction = player.transform.forward;
+        direction.y = 0;
+        direction.Normalize();
+    
+        // Utilisez la variable bossSpawnDistance au lieu d'une valeur fixe
+        Vector3 spawnPos = player.transform.position + direction * bossSpawnDistance;
+    
+        if (totalBosses > 1)
+        {
+            float startX = -(bossSpacing * (totalBosses - 1)) / 2f;
+            spawnPos += player.transform.right * (startX + index * bossSpacing);
+        }
+    
+        spawnPos.y = player.transform.position.y;
+        return spawnPos;
     }
 
     void StartCountdown()
@@ -282,22 +407,78 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    void StartBossCountdown()
+    {
+        if (countdownCoroutine != null)
+            StopCoroutine(countdownCoroutine);
+        
+        countdownCoroutine = StartCoroutine(BossDecompte());
+    }
+
+    private IEnumerator BossDecompte()
+    {
+        float countdown = 30f; // Temps plus long pour le boss
+        
+        while (countdown > 0 && bossAlive > 0)
+        {
+            if (isGameOver)
+                yield break;
+            
+            if (countdownText != null)
+                countdownText.text = "BOSS TEMPS: " + Mathf.Ceil(countdown);
+            yield return new WaitForSeconds(1f);
+            countdown--;
+        }
+        
+        if (bossAlive > 0)
+        {
+            // Pénalité si le boss n'est pas vaincu
+            if (playerControllerScript != null)
+            {
+                playerControllerScript.LoseLife(2); // Pénalité plus sévère
+            }
+            
+            DestroyAllEnemies();
+        }
+        
+        // Passer à la vague suivante
+        if (!isGameOver && playerControllerScript != null && playerControllerScript.currentLives > 0)
+        {
+            StartCoroutine(StartWave());
+        }
+    }
+
     void DestroyAllEnemies()
     {
         foreach (var enemy in GameObject.FindGameObjectsWithTag("Enemy"))
         {
             Destroy(enemy);
-            
         }
         enemiesAlive = 0;
+        bossAlive = 0;
     }
 
-    //Score augmente � la destruction de chaque ennemi
-    public void OnEnemyDestroyed()
+    //Score augmente à la destruction de chaque ennemi
+    public void OnEnemyDestroyed(bool isBoss = false)
     {
         enemiesAlive--;
-        score += 100;
+        
+        if (isBoss)
+        {
+            bossAlive--;
+            score += 500; // Plus de points pour un boss
+        }
+        else
+        {
+            score += 100;
+        }
+        
         UpdateScoreUI();
        
+        // Sauvegarder après un kill important
+        if (isBoss)
+        {
+            SaveGame();
+        }
     }
 }

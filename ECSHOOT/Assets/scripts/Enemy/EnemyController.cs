@@ -151,9 +151,8 @@ public class EnemyController : MonoBehaviour
             if (playerShield.IsShieldActive() )
             {
                 Debug.Log("Shield active (degats) ");
-                Destroy(gameObject);
                 playerShield.TakeShieldHit(1);
-                
+                health.TakeDamage(16);
             }
             
         }
@@ -168,12 +167,6 @@ public class EnemyController : MonoBehaviour
             {
                 DropPowerUpsSimple();
             }
-        }
-       
-        //Dégats collision avec le joueur
-        if (other.CompareTag("Player"))
-        {
-            health.TakeDamage(16); //Mort direct de l'ennemi s'il y'a collision avec le vaisseau
         }
     }
     

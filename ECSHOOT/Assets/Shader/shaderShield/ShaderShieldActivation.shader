@@ -1,134 +1,105 @@
-Shader "Custom/Particles/ShieldActivateShader"
-
+Shader "Custom/ShieldActivationWave"
 {
-
     Properties
-
     {
-
-        _MainTex ("Particle Texture", 2D) = "white" {}
-
-        _Color ("Color", Color) = (1,1,1,1)
-
-        _GlowIntensity ("Glow Intensity", Range(0, 5)) = 2
-
+        _Color ("Wave Color", Color) = (0, 1, 1, 1)
+        _WaveWidth ("Wave Width", Range(0, 1)) = 0.1
+        _WaveSpeed ("Wave Speed", Range(0, 10)) = 5
+        _WaveCount ("Wave Count", Range(1, 10)) = 3
+        _NoiseAmount ("Noise Amount", Range(0, 1)) = 0.3
     }
-
+    
     SubShader
-
     {
-
         Tags 
-
         { 
-
-            "Queue"="Transparent"
-
-            "IgnoreProjector"="True"
-
-            "RenderType"="Transparent"
-
-            "PreviewType"="Plane"
-
+            "Queue" = "Transparent+100"
+            "RenderType" = "Transparent"
+            "IgnoreProjector" = "True"
         }
-
-        Blend SrcAlpha One
-
-        ColorMask RGB
-
-        Cull Back
-
+        
+        Blend One One
         ZWrite Off
-
-        Lighting Off
-
+        Cull Back
+        
         Pass
-
         {
-
             CGPROGRAM
-
             #pragma vertex vert
-
             #pragma fragment frag
-
-            #pragma multi_compile_fog
-
+            
             #include "UnityCG.cginc"
-
+            
             struct appdata
-
             {
-
                 float4 vertex : POSITION;
-
-                float4 color : COLOR;
-
-                float2 texcoord : TEXCOORD0;
-
+                float3 normal : NORMAL;
             };
-
+            
             struct v2f
-
             {
-
-                float4 vertex : SV_POSITION;
-
-                float4 color : COLOR;
-
-                float2 texcoord : TEXCOORD0;
-
-                UNITY_FOG_COORDS(1)
-
+                float4 pos : SV_POSITION;
+                float3 worldPos : TEXCOORD0;
+                float3 viewDir : TEXCOORD1;
             };
-
-            sampler2D _MainTex;
-
-            float4 _MainTex_ST;
-
+            
             float4 _Color;
-
-            float _GlowIntensity;
-
+            float _WaveWidth;
+            float _WaveSpeed;
+            float _WaveCount;
+            float _NoiseAmount;
+            
+            // Variables contrôlées par script
+            uniform float _ActivationTime;
+            uniform float3 _ActivationCenter;
+            
             v2f vert(appdata v)
-
             {
-
                 v2f o;
-
-                o.vertex = UnityObjectToClipPos(v.vertex);
-
-                o.color = v.color * _Color;
-
-                o.texcoord = TRANSFORM_TEX(v.texcoord, _MainTex);
-
-                UNITY_TRANSFER_FOG(o, o.vertex);
-
+                o.pos = UnityObjectToClipPos(v.vertex);
+                o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
+                o.viewDir = normalize(_WorldSpaceCameraPos.xyz - o.worldPos);
                 return o;
-
             }
-
-            fixed4 frag(v2f i) : SV_Target
-
+            
+            // Fonction de bruit
+            float hash(float2 p)
             {
-
-                fixed4 tex = tex2D(_MainTex, i.texcoord);
-
-                fixed4 col = tex * i.color;
-
-                col.rgb *= _GlowIntensity;
-
-                UNITY_APPLY_FOG_COLOR(i.fogCoord, col, fixed4(0,0,0,0));
-
-                return col;
-
+                return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
             }
-
+            
+            fixed4 frag(v2f i) : SV_Target
+            {
+                float dist = distance(i.worldPos, _ActivationCenter);
+                
+                // Onde principale
+                float wave = 0;
+                for (int w = 0; w < _WaveCount; w++)
+                {
+                    float waveOffset = w * 0.3;
+                    float wavePos = dist - (_ActivationTime + waveOffset) * _WaveSpeed;
+                    wave += smoothstep(_WaveWidth, 0, abs(wavePos));
+                }
+                
+                // Bruit pour l'effet d'énergie
+                float noise = hash(i.worldPos.xz * 0.5 + _ActivationTime);
+                wave *= 1 + noise * _NoiseAmount;
+                
+                // Atténuation avec la distance
+                float attenuation = 1 - smoothstep(0, 10, dist);
+                wave *= attenuation;
+                
+                // Fresnel pour les bords
+                float3 normal = normalize(cross(ddx(i.worldPos), ddy(i.worldPos)));
+                float fresnel = pow(1 - abs(dot(normal, i.viewDir)), 3);
+                
+                fixed4 col = _Color;
+                col.a *= wave * fresnel;
+                col.rgb *= wave * 2;
+                
+                return col;
+            }
             ENDCG
-
         }
-
     }
-
 }
- 

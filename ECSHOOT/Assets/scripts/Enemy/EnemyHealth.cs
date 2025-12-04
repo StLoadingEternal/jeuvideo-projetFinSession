@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.InputSystem.Processors;
 using UnityEngine.UI;
 
 public class EnemyHealth : MonoBehaviour
@@ -11,21 +10,21 @@ public class EnemyHealth : MonoBehaviour
     [Header("UI")]
     public Image healthBar;
 
-    //R�f�rences
+    //Références
     private EnemyController enemyController;
     private GameManager gameManager;
 
     //Destruction de l'ennemi
-    private bool  isDead = false;
+    private bool isDead = false;
 
     public bool IsDead => isDead;
 
-    //PArticules explosion
+    //Particules explosion
     public ParticleSystem hitEffectPrefab;
 
     void Start()
     {
-        //Mis � jour de la vie de l'ennemi
+        //Mis à jour de la vie de l'ennemi
         currentHealth = maxHealth;
         UpdateHealthUI();
 
@@ -34,7 +33,7 @@ public class EnemyHealth : MonoBehaviour
     }
 
 
-    //l'ennemi prend des d�g�ts on met � jour l'ui
+    //l'ennemi prend des dégâts on met à jour l'ui
     public void TakeDamage(int damage)
     {
         //degats
@@ -65,11 +64,14 @@ public class EnemyHealth : MonoBehaviour
 
         isDead = true;
 
-        // Informe le GameManager
-        if (gameManager != null)
-            gameManager.OnEnemyDestroyed();
+        // Vérifier si c'est un boss
+        bool isBoss = GetComponent<BossController>() != null;
 
-        // Detruit ennemi
+        // Informer le GameManager
+        if (gameManager != null)
+            gameManager.OnEnemyDestroyed(isBoss);
+
+        // Détruit ennemi
         Destroy(gameObject);
 
         // Effet visuel
@@ -80,6 +82,4 @@ public class EnemyHealth : MonoBehaviour
             Destroy(effect.gameObject, 2f);
         }
     }
-
 }
-

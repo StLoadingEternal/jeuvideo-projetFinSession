@@ -1,4 +1,5 @@
 using System.Collections;
+using Player;
 using PowerUps;
 using UnityEngine;
 
@@ -37,6 +38,10 @@ public class PlayerController : MonoBehaviour
     public Material shipMaterial;
     private float flashDuration = 0.15f;
 
+    
+    [Header("Shield System")]
+    public ShieldShaderController shieldController;
+    
     void Start()
     {
         moveSpeed = initialSpeed;
@@ -44,6 +49,9 @@ public class PlayerController : MonoBehaviour
         gameManagerScript = GameObject.Find("GameManager").GetComponent<GameManager>();
         rb = GetComponent<Rigidbody>();
         orbAnimator = orbInstance.GetComponent<Animator>();
+        
+        if (shieldController == null)
+            shieldController = GetComponentInChildren<ShieldShaderController>();
     }
 
     void FixedUpdate()
@@ -131,18 +139,40 @@ public class PlayerController : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.CompareTag("Enemy"))
+        
+        // COLLECTER POWER-UP SHIELD
+        if (other.CompareTag("PowerUp") && other.GetComponent<PowerUpItem>()?.type == PowerUpType.Shield)
         {
-            StartCoroutine(HitFlash());
-            LoseLife(1);
-
-            //Effet
-        }
-
-        if (other.gameObject.CompareTag("PowerUp"))
-        {
+            if (shieldController != null)
+            {
+                shieldController.ActivateShield();
+            }
             Destroy(other.gameObject);
-            Debug.Log("Collision power up");
+            return;
+        }
+        
+        // PRENDRE UN HIT
+        if (other.CompareTag("Enemy"))
+        {
+            Vector3 hitPoint = other.ClosestPoint(transform.position);
+            
+            // Vérifier le shield d'abord
+            if (shieldController != null && shieldController.IsShieldActive())
+            {
+                // Appliquer un hit au shield
+                shieldController.TakeShieldHit(0.2f,hitPoint );
+                
+                // Si le shield est encore actif, arrêter ici
+                if (shieldController.GetShieldHealth() > 0)
+                {
+                    Destroy(other.gameObject);
+                    return;
+                }
+            }
+            
+            // Pas de shield ou shield cassé();
+            LoseLife(1);
+            Destroy(other.gameObject);
         }
     }
 
@@ -157,4 +187,15 @@ public class PlayerController : MonoBehaviour
         shipMaterial.SetFloat("_FlashAmount", 0f);
     }
 
+    public float MoveSpeed
+    {
+        get => moveSpeed;
+        set => moveSpeed = value;
+    }
+
+    public float ForwardSpeed
+    {
+        get => forwardSpeed;
+        set => forwardSpeed = value;
+    }
 }
