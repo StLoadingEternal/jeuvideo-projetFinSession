@@ -29,9 +29,18 @@ public class Blaster : MonoBehaviour
     private float speedBoostTimer = 0f;
     private float damageBoostTimer = 0f;
 
+    private GameManager gameManager;
+    private void Start()
+    {
+        gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
+    }
     void Update()
     {
-        if (Input.GetMouseButton(0) && Time.time > nextFire)
+        //Bloquer quand c'est gameOver
+        if (gameManager.isGameOver)
+            return;
+
+        if (Input.GetMouseButton(0) && Time.time > nextFire )
         {
             // Calculer le fire rate (avec boost si actif)
             float currentFireRate = fireRate;

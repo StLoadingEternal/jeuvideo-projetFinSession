@@ -22,7 +22,7 @@ public class GameManager : MonoBehaviour
     private int currentWave = 0;
     public int enemiesAlive = 0;
     private int score = 0;
-    private float waveDuration = 30f;
+    private float waveDuration = 10f;
 
     [Header("Système de Boss")]
     public GameObject bossPrefab;
@@ -150,16 +150,14 @@ public class GameManager : MonoBehaviour
 
     // ============ GESTION DU JEU ============
 
-    //Mis à jour vie
+    //Mis à jour vie (Attention problème d'affichages au début du jeu avec le playscriptcontroller)
     public void UpdateLifeUI(int currentLives = 3)
     {
-        int livesToDisplay = playerControllerScript.currentLives;
-
         for (int i = 0; i < lifeImages.Length; i++)
         {
             if (lifeImages[i] != null)
             {
-                lifeImages[i].enabled = i < livesToDisplay;
+                lifeImages[i].enabled = i < currentLives;
             }
         }
     }
@@ -224,13 +222,12 @@ public class GameManager : MonoBehaviour
     //Débuter une vague
     IEnumerator StartWave()
     {
+        //Bloquer les vagues en cas de gamesOver
         if (isGameOver)
             yield break;
 
         //Vague suivante
         currentWave++;
-        UpdateScoreUI();
-        UpdateLifeUI();
 
         // Vérifier si c'est une vague de boss
         isBossWave = (currentWave % bossSpawnWaveInterval == 0 && currentWave > 0);
@@ -382,8 +379,9 @@ public class GameManager : MonoBehaviour
     {
         float countdown = waveDuration + (currentWave - 1) * 5;
 
-        while (countdown > 0)
+        while (countdown > 0 && enemiesAlive > 0)
         {
+            //Bloquer les vagues en cas de gamesOver
             if (isGameOver)
                 yield break;
 
@@ -407,12 +405,9 @@ public class GameManager : MonoBehaviour
             DestroyAllEnemies();
 
         }
-
-        // Vérifier si le jeu n'est pas terminé avant de lancer une nouvelle vague
-        if (!isGameOver && playerControllerScript != null && playerControllerScript.currentLives > 0)
-        {
+            //Lancer une nouvelle vague
             StartCoroutine(StartWave());
-        }
+        
     }
 
     void StartBossCountdown()
@@ -481,7 +476,7 @@ public class GameManager : MonoBehaviour
             score += 100;
         }
         
-        UpdateScoreUI();
+        UpdateScoreUI();//Peut - être ne pas donner de point en cas de collision
        
         // Sauvegarder après un kill important
         if (isBoss)

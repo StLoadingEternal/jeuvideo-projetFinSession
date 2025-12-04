@@ -20,7 +20,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("Vies")]
     public int maxLives = 3; // vies de base
-    public int currentLives;
+    public int currentLives = -1;
 
     //Références
     private Rigidbody rb;

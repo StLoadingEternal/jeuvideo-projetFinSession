@@ -83,7 +83,5 @@ public class EnemyHealth : MonoBehaviour
             Destroy(effect.gameObject, 2f);
         }
 
-       
-        
     }
 }
