@@ -29,7 +29,6 @@ public class PlayerController : MonoBehaviour
     //Animation Accélération
     public float boostSpeed = 150f;
     public GameObject orbInstance;
-    private Animator orbAnimator;
     public ParticleSystem boost_L;
     public ParticleSystem boost_R;
 
@@ -43,7 +42,6 @@ public class PlayerController : MonoBehaviour
         currentLives = maxLives;
         gameManagerScript = GameObject.Find("GameManager").GetComponent<GameManager>();
         rb = GetComponent<Rigidbody>();
-        orbAnimator = orbInstance.GetComponent<Animator>();
     }
 
     void FixedUpdate()
@@ -90,14 +88,12 @@ public class PlayerController : MonoBehaviour
     {
         if (Input.GetKey(KeyCode.Space))
         {
-            orbAnimator.SetBool("IsCharging", true);
             boost_L.Play();
             boost_R.Play();
             moveSpeed = 40f;
         }
         else
         {
-            orbAnimator.SetBool("IsCharging", false);
             boost_L.Stop();
             boost_R.Stop();
             moveSpeed = initialSpeed;
