@@ -66,8 +66,11 @@ namespace SlimUI.ModernMenu{
 		void Start(){
 			CameraObject = transform.GetComponent<Animator>();
 
-			
-			playMenu.SetActive(false);
+			//Appliquer la préférences de son et d'écran
+			AudioListener.volume = GameSettings.MusicVolume;
+            Screen.fullScreen = GameSettings.Fullscreen;
+
+            playMenu.SetActive(false);
 			exitMenu.SetActive(false);
 			if(creditsMenu) creditsMenu.SetActive(false);
 			if(newGameConfirmationPanel) newGameConfirmationPanel.SetActive(false);
