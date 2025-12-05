@@ -3,6 +3,9 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.IO;
+using Newtonsoft.Json;
+using System;
 
 public class GameManager : MonoBehaviour
 {
@@ -26,54 +29,196 @@ public class GameManager : MonoBehaviour
 
     [Header("Système de Boss")]
     public GameObject bossPrefab;
-    public int bossSpawnWaveInterval = 4; // Apparaît toutes les 4 vagues
+    public int bossSpawnWaveInterval = 4;
     private int bossAppearanceCount = 0;
     private bool isBossWave = false;
     
     [Header("Paramètres de spawn du Boss")]
-    public float bossSpawnDistance = 120f; // Distance de spawn (augmentez cette valeur)
-    public float bossSpacing = 20f;        // Espace entre plusieurs bosses
+    public float bossSpawnDistance = 120f;
+    public float bossSpacing = 20f;
 
     public bool IsBossWave => isBossWave;
-
     public int bossAlive = 0;
 
-    //Joueur
     public GameObject player;
     private PlayerController playerControllerScript;
-
-    //Spawner
     private EnemySpawner enemySpawnerScript;
-
-    //Game over
     public bool isGameOver;
     public ParticleSystem destructionParticle;
-
-    //Sauvegarde
-    private SaveSystem saveSystem;
     
-    //Référence sur la couroutine du décompte
     private Coroutine countdownCoroutine;
-    //Références sur le menu pause
     private MenuPause menuPauseScript;
+    private int currentSaveSlot = 0;
+    private bool isNewGame = false;
+
+    // ============ SYSTÈME DE SAUVEGARDE ============
+
+    [System.Serializable]
+    public class GameState
+    {
+        public int score;
+        public int lives;
+        public int currentWave;
+        public string saveDate;
+        public int saveSlot;
+
+        public GameState(int score, int lives, int currentWave, int slot = 1)
+        {
+            this.score = score;
+            this.lives = lives;
+            this.currentWave = currentWave;
+            this.saveSlot = slot;
+            this.saveDate = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+        }
+    }
+
+    public static class SaveSystem
+    {
+        private static readonly string saveFolder = Application.persistentDataPath;
+        private static string lastSaveSlotKey = "LastSaveSlot";
+
+        public static void SaveGame(GameState state)
+        {
+            try
+            {
+                string savePath = Path.Combine(saveFolder, $"save_slot_{state.saveSlot}.json");
+                string json = JsonConvert.SerializeObject(state, Formatting.Indented);
+                File.WriteAllText(savePath, json);
+
+                PlayerPrefs.SetInt(lastSaveSlotKey, state.saveSlot);
+                PlayerPrefs.Save();
+
+                Debug.Log($"Jeu sauvegardé dans le slot {state.saveSlot}");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError("Erreur sauvegarde : " + e.Message);
+            }
+        }
+
+        public static GameState LoadFromSlot(int slot)
+        {
+            string savePath = Path.Combine(saveFolder, $"save_slot_{slot}.json");
+
+            if (!File.Exists(savePath))
+            {
+                return null;
+            }
+
+            try
+            {
+                string json = File.ReadAllText(savePath);
+                GameState state = JsonConvert.DeserializeObject<GameState>(json);
+                return state;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError("Erreur chargement : " + e.Message);
+                return null;
+            }
+        }
+
+        public static GameState LoadLastSave()
+        {
+            int lastSlot = PlayerPrefs.GetInt(lastSaveSlotKey, 0);
+            if (lastSlot > 0)
+            {
+                return LoadFromSlot(lastSlot);
+            }
+            return null;
+        }
+
+        public static bool HasSaveInSlot(int slot)
+        {
+            string savePath = Path.Combine(saveFolder, $"save_slot_{slot}.json");
+            return File.Exists(savePath);
+        }
+
+        public static bool CheckHasSave()
+        {
+            for (int i = 1; i <= 3; i++)
+            {
+                if (HasSaveInSlot(i))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static void DeleteSave(int slot)
+        {
+            string savePath = Path.Combine(saveFolder, $"save_slot_{slot}.json");
+            if (File.Exists(savePath))
+            {
+                File.Delete(savePath);
+                Debug.Log($"Sauvegarde slot {slot} supprimée");
+            }
+        }
+
+        public static void DeleteAllSaves()
+        {
+            for (int i = 1; i <= 3; i++)
+            {
+                DeleteSave(i);
+            }
+        }
+
+        public static int GetLastSaveSlot()
+        {
+            return PlayerPrefs.GetInt(lastSaveSlotKey, 0);
+        }
+
+        public static int GetBestSlotForNewGame()
+        {
+            for (int i = 1; i <= 3; i++)
+            {
+                if (!HasSaveInSlot(i))
+                {
+                    return i;
+                }
+            }
+            
+            return FindOldestSaveSlot();
+        }
+
+        private static int FindOldestSaveSlot()
+        {
+            DateTime oldestDate = DateTime.MaxValue;
+            int oldestSlot = 1;
+            
+            for (int i = 1; i <= 3; i++)
+            {
+                GameState save = LoadFromSlot(i);
+                if (save != null && !string.IsNullOrEmpty(save.saveDate))
+                {
+                    if (DateTime.TryParse(save.saveDate, out DateTime saveDate))
+                    {
+                        if (saveDate < oldestDate)
+                        {
+                            oldestDate = saveDate;
+                            oldestSlot = i;
+                        }
+                    }
+                }
+            }
+            
+            return oldestSlot;
+        }
+    }
 
     private void Start()
     {
-        //Références sur le joueur et l'ennemi spawner
         playerControllerScript = player.GetComponent<PlayerController>();
         enemySpawnerScript = GameObject.Find("EnemySpawner").GetComponent<EnemySpawner>();
 
-        //Système de sauvegarde
-        saveSystem = new SaveSystem();
-
-        //Initialiser correctement l'UI
         UpdateScoreUI();
         UpdateLifeUI();
         gameOverPanel.SetActive(false);
 
-        //Référence sur le menu pause
         menuPauseScript = MenuPause.GetComponent<MenuPause>();
 
+        LoadGame();
         StartCoroutine(StartWave());
     }
 
@@ -91,22 +236,84 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // ============ SYSTÈME DE SAUVEGARDE ============
+    // ============ SAUVEGARDE ============
 
-    public void SaveGame()
+    public void SaveGame(int slot = 0)
     {
         if (playerControllerScript != null)
         {
-            saveSystem.SaveGame(score, playerControllerScript.currentLives, currentWave);
+            if (slot == 0)
+            {
+                if (currentSaveSlot > 0)
+                {
+                    slot = currentSaveSlot;
+                }
+                else
+                {
+                    slot = PlayerPrefs.GetInt("LoadSlot", 0);
+                    if (slot == 0) slot = 1;
+                }
+            }
+
+            GameState state = new GameState(
+                score, 
+                playerControllerScript.currentLives, 
+                currentWave,
+                slot
+            );
+
+            SaveSystem.SaveGame(state);
+            currentSaveSlot = slot;
+            
+            Debug.Log($"Partie sauvegardée dans le slot {slot}");
         }
     }
 
     public void LoadGame()
     {
-        GameState state = SaveSystem.LoadStateFromSave();
+        if (PlayerPrefs.GetInt("NewGame", 0) == 1)
+        {
+            Debug.Log("Nouvelle partie démarrée");
+            isNewGame = true;
+            
+            score = 0;
+            currentWave = 0;
+            currentSaveSlot = PlayerPrefs.GetInt("NewGameSlot", 1);
+            
+            if (playerControllerScript != null)
+            {
+                playerControllerScript.currentLives = 3;
+            }
+
+            PlayerPrefs.DeleteKey("NewGame");
+            PlayerPrefs.DeleteKey("NewGameSlot");
+            PlayerPrefs.DeleteKey("LoadSlot");
+            PlayerPrefs.Save();
+            
+            UpdateScoreUI();
+            UpdateLifeUI();
+            return;
+        }
+
+        int loadSlot = PlayerPrefs.GetInt("LoadSlot", 0);
+        GameState state = null;
+
+        if (loadSlot > 0)
+        {
+            state = SaveSystem.LoadFromSlot(loadSlot);
+            currentSaveSlot = loadSlot;
+        }
+        else
+        {
+            state = SaveSystem.LoadLastSave();
+            if (state != null)
+            {
+                currentSaveSlot = state.saveSlot;
+            }
+        }
+
         if (state != null)
         {
-            // Appliquer l'état chargé
             score = state.score;
             currentWave = state.currentWave;
             
@@ -115,33 +322,91 @@ public class GameManager : MonoBehaviour
                 playerControllerScript.currentLives = state.lives;
             }
 
-            // Mettre à jour l'UI
             UpdateScoreUI();
             UpdateLifeUI();
             
-            Debug.Log($"Partie chargée - Vague: {currentWave} Score: {score} Vies: {state.lives}");
+            Debug.Log($"Partie chargée depuis le slot {state.saveSlot}");
+            
+            PlayerPrefs.DeleteKey("LoadSlot");
+            PlayerPrefs.Save();
         }
         else
         {
-            Debug.Log("Nouvelle partie démarrée");
-            // Initialiser les vies du joueur si nouvelle partie
+            Debug.Log("Nouvelle partie démarrée (pas de sauvegarde)");
+            isNewGame = true;
+            
             if (playerControllerScript != null)
             {
                 playerControllerScript.currentLives = 3;
                 UpdateLifeUI();
             }
+            currentSaveSlot = 1;
         }
     }
 
-    public void DeleteSave()
+    public int GetCurrentSaveSlot() { return currentSaveSlot; }
+
+    public void SetCurrentSaveSlot(int slot)
     {
-        SaveSystem.DeleteSave();
-        Debug.Log("Sauvegarde supprimée");
+        currentSaveSlot = slot;
+        PlayerPrefs.SetInt("CurrentSaveSlot", slot);
+        PlayerPrefs.Save();
+    }
+
+    public void DeleteCurrentSave()
+    {
+        if (currentSaveSlot > 0)
+        {
+            SaveSystem.DeleteSave(currentSaveSlot);
+        }
+    }
+
+    public int GetCurrentScore() { return score; }
+    public int GetCurrentWave() { return currentWave; }
+    public int GetCurrentLives() 
+    { 
+        if (playerControllerScript != null) 
+            return playerControllerScript.currentLives; 
+        return 3; 
+    }
+
+    public void StartNewGameInSlot(int slot)
+    {
+        SaveSystem.DeleteSave(slot);
+        
+        score = 0;
+        currentWave = 0;
+        bossAppearanceCount = 0;
+        isNewGame = true;
+        currentSaveSlot = slot;
+        
+        if (playerControllerScript != null)
+        {
+            playerControllerScript.currentLives = 3;
+        }
+        
+        UpdateScoreUI();
+        UpdateLifeUI();
+        
+        if (!isGameOver)
+        {
+            if (countdownCoroutine != null)
+                StopCoroutine(countdownCoroutine);
+            
+            DestroyAllEnemies();
+            StartCoroutine(StartWave());
+        }
+        
+        Debug.Log($"Nouvelle partie dans le slot {slot}");
+    }
+
+    public void StartNewGame()
+    {
+        StartNewGameInSlot(1);
     }
 
     // ============ GESTION DU JEU ============
 
-    //Mis à jour vie
     public void UpdateLifeUI(int currentLives = -1)
     {
         int livesToDisplay = currentLives;
@@ -160,7 +425,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    //Mis à jour score
     void UpdateScoreUI()
     {
         if (scoreText != null)
@@ -174,29 +438,19 @@ public class GameManager : MonoBehaviour
 
         destructionParticle.Play();
 
-        // Arrêter le décompte
         if (countdownCoroutine != null)
             StopCoroutine(countdownCoroutine);
 
-        // Supprimer la sauvegarde
-        DeleteSave();
-
-        // Détruire les ennemis
+        DeleteCurrentSave();
         DestroyAllEnemies();
-
     }
 
     public void RetryGame()
     {
-        // Supprimer l'ancienne sauvegarde avant de recommencer
-        DeleteSave();
-        
-        // Recharge la scène actuelle
+        DeleteCurrentSave();
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-
     }
 
-    //Affiche un texte au début de chaque vague
     public IEnumerator AfficherVague()
     {
         if (waveText != null)
@@ -213,22 +467,30 @@ public class GameManager : MonoBehaviour
             indications.gameObject.SetActive(false);
     }
 
-    //Débuter une vague
     IEnumerator StartWave()
     {
         if (isGameOver)
             yield break;
 
-        //Vague suivante
         currentWave++;
         UpdateScoreUI();
         UpdateLifeUI();
 
-        // Vérifier si c'est une vague de boss
+        if (!isNewGame || currentWave > 1)
+        {
+            SaveGame();
+        }
+        
+        if (isNewGame && currentWave > 1)
+        {
+            isNewGame = false;
+        }
+
         isBossWave = (currentWave % bossSpawnWaveInterval == 0 && currentWave > 0);
         
         if (isBossWave)
         {
+            bossAppearanceCount++;
             yield return StartCoroutine(SpawnBossWave());
         }
         else
@@ -238,20 +500,14 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // NOUVELLE MÉTHODE : Démarrer une vague normale
     void StartNormalWave()
     {
-        // Calcul de la difficulté
         int totalEnemies = initialEnemies + (currentWave - 1);
         float horizontalSpeed = 10f + (currentWave - 1) * 2f;
 
-        int spawnedEnemies = 0;
-
-        // Spawn des ennemis
         StartCoroutine(SpawnNormalEnemies(totalEnemies, horizontalSpeed));
     }
 
-    // NOUVELLE MÉTHODE : Spawn progressif des ennemis normaux
     IEnumerator SpawnNormalEnemies(int totalEnemies, float horizontalSpeed)
     {
         int spawnedEnemies = 0;
@@ -264,7 +520,6 @@ public class GameManager : MonoBehaviour
                 enemiesAlive++;
                 spawnedEnemies++;
                 
-                // Petite pause entre chaque spawn
                 yield return new WaitForSeconds(0.5f);
             }
             else
@@ -276,10 +531,8 @@ public class GameManager : MonoBehaviour
         StartCountdown();
     }
 
-    // Vague de boss
     IEnumerator SpawnBossWave()
     {
-        // Afficher un message spécial pour le boss
         if (waveText != null)
             waveText.text = "BOSS VAGUE " + bossAppearanceCount;
         if (warningText != null)
@@ -293,10 +546,7 @@ public class GameManager : MonoBehaviour
         if (indications != null)
             indications.gameObject.SetActive(false);
         
-        // Spawn le(s) boss
         SpawnBoss();
-        
-        // Lancer le décompte pour le boss (plus long)
         StartBossCountdown();
     }
 
@@ -316,22 +566,19 @@ public class GameManager : MonoBehaviour
         
             Vector3 spawnPos = player.transform.position + direction * spawnDistance;
         
-            // Espacement pour plusieurs bosses
             if (numberOfBosses > 1)
             {
-                float spacing = 25f; // Augmenté l'espacement
+                float spacing = 25f;
                 float startX = -(spacing * (numberOfBosses - 1)) / 2f;
                 spawnPos += player.transform.right * (startX + i * spacing);
             }
         
             spawnPos.y = player.transform.position.y;
         
-            // Orientation vers le joueur
             Quaternion spawnRot = Quaternion.LookRotation(player.transform.position - spawnPos);
         
             GameObject boss = Instantiate(bossPrefab, spawnPos, spawnRot);
         
-            // Configurer la santé
             EnemyHealth bossHealth = boss.GetComponent<EnemyHealth>();
             if (bossHealth != null)
             {
@@ -341,25 +588,6 @@ public class GameManager : MonoBehaviour
             bossAlive++;
             enemiesAlive++;
         }
-    }
-
-    Vector3 CalculateBossSpawnPosition(int index, int totalBosses)
-    {
-        Vector3 direction = player.transform.forward;
-        direction.y = 0;
-        direction.Normalize();
-    
-        // Utilisez la variable bossSpawnDistance au lieu d'une valeur fixe
-        Vector3 spawnPos = player.transform.position + direction * bossSpawnDistance;
-    
-        if (totalBosses > 1)
-        {
-            float startX = -(bossSpacing * (totalBosses - 1)) / 2f;
-            spawnPos += player.transform.right * (startX + index * bossSpacing);
-        }
-    
-        spawnPos.y = player.transform.position.y;
-        return spawnPos;
     }
 
     void StartCountdown()
@@ -395,12 +623,9 @@ public class GameManager : MonoBehaviour
                 playerControllerScript.LoseLife(1);
             }
 
-            //Détruire les ennemis à la fin du temps 
             DestroyAllEnemies();
-
         }
 
-        // Vérifier si le jeu n'est pas terminé avant de lancer une nouvelle vague
         if (!isGameOver && playerControllerScript != null && playerControllerScript.currentLives > 0)
         {
             StartCoroutine(StartWave());
@@ -417,7 +642,7 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator BossDecompte()
     {
-        float countdown = 30f; // Temps plus long pour le boss
+        float countdown = 30f;
         
         while (countdown > 0 && bossAlive > 0)
         {
@@ -432,16 +657,14 @@ public class GameManager : MonoBehaviour
         
         if (bossAlive > 0)
         {
-            // Pénalité si le boss n'est pas vaincu
             if (playerControllerScript != null)
             {
-                playerControllerScript.LoseLife(2); // Pénalité plus sévère
+                playerControllerScript.LoseLife(2);
             }
             
             DestroyAllEnemies();
         }
         
-        // Passer à la vague suivante
         if (!isGameOver && playerControllerScript != null && playerControllerScript.currentLives > 0)
         {
             StartCoroutine(StartWave());
@@ -458,7 +681,6 @@ public class GameManager : MonoBehaviour
         bossAlive = 0;
     }
 
-    //Score augmente à la destruction de chaque ennemi
     public void OnEnemyDestroyed(bool isBoss = false)
     {
         enemiesAlive--;
@@ -466,7 +688,7 @@ public class GameManager : MonoBehaviour
         if (isBoss)
         {
             bossAlive--;
-            score += 500; // Plus de points pour un boss
+            score += 500;
         }
         else
         {
@@ -475,8 +697,7 @@ public class GameManager : MonoBehaviour
         
         UpdateScoreUI();
        
-        // Sauvegarder après un kill important
-        if (isBoss)
+        if (isBoss || currentWave % 3 == 0)
         {
             SaveGame();
         }

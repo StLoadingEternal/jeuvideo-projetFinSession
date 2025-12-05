@@ -3,259 +3,484 @@ using System.Collections;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.SceneManagement;
+using System.IO;
+using Newtonsoft.Json;
+using System;
 
-namespace SlimUI.ModernMenu{
-	public class UIMenuManager : MonoBehaviour {
-		private Animator CameraObject;
+namespace SlimUI.ModernMenu
+{
+    public class UIMenuManager : MonoBehaviour
+    {
+        private Animator CameraObject;
 
-		// campaign button sub menu
         [Header("MENUS")]
-        [Tooltip("The Menu for when the MAIN menu buttons")]
         public GameObject mainMenu;
-        [Tooltip("THe first list of buttons")]
         public GameObject firstMenu;
-        [Tooltip("The Menu for when the PLAY button is clicked")]
         public GameObject playMenu;
-        [Tooltip("The Menu for when the EXIT button is clicked")]
         public GameObject exitMenu;
-        [Tooltip("Optional 4th Menu")]
         public GameObject creditsMenu;
-		[Tooltip("The Menu for when the LOAD button is clicked")]
-		public GameObject savesMenu;
+        public GameObject savesMenu;
 
-        // SAUVEGARDE - Nouveaux éléments
         [Header("SAUVEGARDE")]
         public Button continueButton;
         public TextMeshProUGUI saveInfoText;
         public GameObject newGameConfirmationPanel;
 
-        [Header("LOAD SAVES")]
-        public Button save1;
-        public Button save2;
-        public Button save3;
+        [Header("LOAD SAVES - UI Elements")]
+        public Button saveSlot1Button;
+        public Button saveSlot2Button;
+        public Button saveSlot3Button;
+        public TextMeshProUGUI saveSlot1Text;
+        public TextMeshProUGUI saveSlot2Text;
+        public TextMeshProUGUI saveSlot3Text;
+        public GameObject saveSlot1Panel;
+        public GameObject saveSlot2Panel;
+        public GameObject saveSlot3Panel;
+        public GameObject emptySlot1Panel;
+        public GameObject emptySlot2Panel;
+        public GameObject emptySlot3Panel;
 
-        public enum Theme {custom1, custom2, custom3};
+        public enum Theme { custom1, custom2, custom3 };
         [Header("THEME SETTINGS")]
         public Theme theme;
         public ThemedUIData themeController;
 
         [Header("PANELS")]
-        [Tooltip("The UI Panel parenting all sub menus")]
         public GameObject mainCanvas;
-        [Tooltip("The UI Panel that holds the VIDEO window tab")]
         public GameObject PanelSkin;
-        [Tooltip("The UI Panel that holds the GAME window tab")]
         public GameObject PanelGame;
-  
-        // highlights in settings screen
-        [Header("SETTINGS SCREEN")]
-        [Tooltip("Highlight Image for when GAME Tab is selected in Settings")]
-        public GameObject lineGame;
-        [Tooltip("Highlight Image for when VIDEO Tab is selected in Settings")]
-        public GameObject lineSkin;
-     
 
-		[Header("SFX")]
-        [Tooltip("The GameObject holding the Audio Source component for the HOVER SOUND")]
+        [Header("SETTINGS SCREEN")]
+        public GameObject lineGame;
+        public GameObject lineSkin;
+
+        [Header("SFX")]
         public AudioSource hoverSound;
-        [Tooltip("The GameObject holding the Audio Source component for the AUDIO SLIDER")]
         public AudioSource sliderSound;
-        [Tooltip("The GameObject holding the Audio Source component for the SWOOSH SOUND when switching to the Settings Screen")]
         public AudioSource swooshSound;
 
-		void Start(){
-			CameraObject = transform.GetComponent<Animator>();
+        void Start()
+        {
+            CameraObject = transform.GetComponent<Animator>();
 
-			//Appliquer la préférences de son et d'écran
-			AudioListener.volume = GameSettings.MusicVolume;
+            AudioListener.volume = GameSettings.MusicVolume;
             Screen.fullScreen = GameSettings.Fullscreen;
 
             playMenu.SetActive(false);
-			exitMenu.SetActive(false);
-			if(creditsMenu) creditsMenu.SetActive(false);
-			if(newGameConfirmationPanel) newGameConfirmationPanel.SetActive(false);
-			firstMenu.SetActive(true);
-			mainMenu.SetActive(true);
+            exitMenu.SetActive(false);
+            if (creditsMenu) creditsMenu.SetActive(false);
+            if (newGameConfirmationPanel) newGameConfirmationPanel.SetActive(false);
+            if (savesMenu) savesMenu.SetActive(false);
+            firstMenu.SetActive(true);
+            mainMenu.SetActive(true);
 
-			CheckSaveFile(); // Vérifier la sauvegarde au démarrage
-		}
+            CheckSaveFile();
+        }
 
-		// ============ SYSTÈME DE SAUVEGARDE ============
+        // ============ SYSTÈME DE SAUVEGARDE ============
 
-		private void CheckSaveFile()
-		{
-			bool hasSave = SaveSystem.CheckHasSave();
-			
-			if (continueButton != null)
-			{
-				continueButton.interactable = hasSave;
-				
-				if (hasSave)
-				{
-					// Charger les infos de sauvegarde
-					GameState saveData = SaveSystem.LoadStateFromSave();
-					if (saveData != null)
-					{
-						TextMeshProUGUI buttonText = continueButton.GetComponentInChildren<TextMeshProUGUI>();
-						if (buttonText != null)
-						{
-							buttonText.text = $"CONTINUER\nVague {saveData.currentWave} - Score: {saveData.score}";
-						}
-						
-						// Mettre à jour le texte d'info si besoin
-						if (saveInfoText != null)
-						{
-							saveInfoText.text = $"Partie sauvegardée:\nVague {saveData.currentWave} - Score: {saveData.score} - Vies: {saveData.lives}";
-						}
-					}
-				}
-				else
-				{
-					TextMeshProUGUI buttonText = continueButton.GetComponentInChildren<TextMeshProUGUI>();
-					if (buttonText != null)
-					{
-						buttonText.text = "CONTINUER\n(Aucune sauvegarde)";
-					}
-				}
-			}
-		}
+        [System.Serializable]
+        public class GameState
+        {
+            public int score;
+            public int lives;
+            public int currentWave;
+            public string saveDate;
+            public int saveSlot;
 
-		public void ContinueGame()
-		{
-			if (SaveSystem.CheckHasSave())
-			{
-				PlaySwoosh();
-				LoadScene("mainScene"); // Remplacez par le nom de votre scène de jeu
-			}
-			else
-			{
-				Debug.LogWarning("Aucune sauvegarde trouvée !");
-				PlayHover(); // Jouer un son d'erreur si vous en avez un
-			}
-		}
+            public GameState(int score, int lives, int currentWave, int slot = 1)
+            {
+                this.score = score;
+                this.lives = lives;
+                this.currentWave = currentWave;
+                this.saveSlot = slot;
+                this.saveDate = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+            }
+        }
 
-		public void NewGame()
-		{
-			PlaySwoosh();
-			
-			// Vérifier si une sauvegarde existe
-			if (SaveSystem.CheckHasSave() && newGameConfirmationPanel != null)
-			{
-				// Afficher le panel de confirmation
-				newGameConfirmationPanel.SetActive(true);
-			}
-			else
-			{
-				// Démarrer directement une nouvelle partie
-				StartNewGame();
-			}
-		}
+        public class SaveSystem
+        {
+            private static readonly string saveFolder = Application.persistentDataPath;
+            private static string lastSaveSlotKey = "LastSaveSlot";
 
-		public void ConfirmNewGame()
-		{
-			StartNewGame();
-			
-			if (newGameConfirmationPanel != null)
-			{
-				newGameConfirmationPanel.SetActive(false);
-			}
-		}
+            public static void SaveGame(GameState state)
+            {
+                try
+                {
+                    string savePath = Path.Combine(saveFolder, $"save_slot_{state.saveSlot}.json");
+                    string json = JsonConvert.SerializeObject(state, Formatting.Indented);
+                    File.WriteAllText(savePath, json);
 
-		public void CancelNewGame()
-		{
-			PlayHover();
-			
-			if (newGameConfirmationPanel != null)
-			{
-				newGameConfirmationPanel.SetActive(false);
-			}
-		}
+                    PlayerPrefs.SetInt(lastSaveSlotKey, state.saveSlot);
+                    PlayerPrefs.Save();
 
-		private void StartNewGame()
-		{
-			// Supprimer l'ancienne sauvegarde
-			SaveSystem.DeleteSave();
-			
-			// Charger la scène de jeu
-			LoadScene("mainScene"); // Remplacez par le nom de votre scène de jeu
-		}
+                    Debug.Log($"Jeu sauvegardé dans le slot {state.saveSlot}");
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError("Erreur sauvegarde : " + e.Message);
+                }
+            }
 
-		// ============ FONCTIONS ORIGINALES (conservées) ============
+            public static GameState LoadFromSlot(int slot)
+            {
+                string savePath = Path.Combine(saveFolder, $"save_slot_{slot}.json");
 
-		public void LoadScene(string sceneName)
-		{
-			SceneManager.LoadSceneAsync(sceneName);
-			
-			
-			// if(waitForInput){
-   //              StartCoroutine(LoadAsynchronously(sceneName));
-   //          }
-		}
-		
-		// gestion fenetre de chargement
-		// IEnumerator LoadAsynchronously(string sceneName)
-		// {
-		// 	// loadingBar.value = 0;
-		// 	loadingMenu.SetActive(true);
-		//
-		// 	AsyncOperation operation = SceneManager.LoadSceneAsync(sceneName);
-		// 	operation.allowSceneActivation = false;
-		//
-		// 	while (!operation.isDone)
-		// 	{
-		// 		float progress = Mathf.Clamp01(operation.progress / 0.9f);
-		// 		// loadingBar.value = progress;
-		//
-		// 		if (operation.progress >= 0.9f)
-		// 		{
-		// 			loadPromptText.text = "Appuyez sur " + userPromptKey + " pour continuer";
-		//
-		// 			if (Input.GetKeyDown(userPromptKey))
-		// 			{
-		// 				operation.allowSceneActivation = true;
-		// 			}
-		// 		}
-		//
-		// 		yield return null;
-		// 	}
-		// }
-		
-		
+                if (!File.Exists(savePath))
+                {
+                    return null;
+                }
 
-		//Naviagations Main Menus
-		public void PlayCampaign(){
-			PlaySwoosh();
-			exitMenu.SetActive(false);
-			if(creditsMenu) creditsMenu.SetActive(false);
+                try
+                {
+                    string json = File.ReadAllText(savePath);
+                    GameState state = JsonConvert.DeserializeObject<GameState>(json);
+                    return state;
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError("Erreur chargement : " + e.Message);
+                    return null;
+                }
+            }
+
+            public static GameState LoadLastSave()
+            {
+                int lastSlot = PlayerPrefs.GetInt(lastSaveSlotKey, 0);
+                if (lastSlot > 0)
+                {
+                    return LoadFromSlot(lastSlot);
+                }
+                return null;
+            }
+
+            public static bool HasSaveInSlot(int slot)
+            {
+                string savePath = Path.Combine(saveFolder, $"save_slot_{slot}.json");
+                return File.Exists(savePath);
+            }
+
+            public static bool CheckHasSave()
+            {
+                for (int i = 1; i <= 3; i++)
+                {
+                    if (HasSaveInSlot(i))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            public static void DeleteSave(int slot)
+            {
+                string savePath = Path.Combine(saveFolder, $"save_slot_{slot}.json");
+                if (File.Exists(savePath))
+                {
+                    File.Delete(savePath);
+                }
+            }
+
+            public static void DeleteAllSaves()
+            {
+                for (int i = 1; i <= 3; i++)
+                {
+                    DeleteSave(i);
+                }
+            }
+
+            public static int GetLastSaveSlot()
+            {
+                return PlayerPrefs.GetInt(lastSaveSlotKey, 0);
+            }
+
+            public static int GetBestSlotForNewGame()
+            {
+                for (int i = 1; i <= 3; i++)
+                {
+                    if (!HasSaveInSlot(i))
+                    {
+                        return i;
+                    }
+                }
+                
+                return FindOldestSaveSlot();
+            }
+
+            private static int FindOldestSaveSlot()
+            {
+                DateTime oldestDate = DateTime.MaxValue;
+                int oldestSlot = 1;
+                
+                for (int i = 1; i <= 3; i++)
+                {
+                    GameState save = LoadFromSlot(i);
+                    if (save != null && !string.IsNullOrEmpty(save.saveDate))
+                    {
+                        if (DateTime.TryParse(save.saveDate, out DateTime saveDate))
+                        {
+                            if (saveDate < oldestDate)
+                            {
+                                oldestDate = saveDate;
+                                oldestSlot = i;
+                            }
+                        }
+                    }
+                }
+                
+                return oldestSlot;
+            }
+        }
+
+        private void CheckSaveFile()
+        {
+            bool hasSave = SaveSystem.CheckHasSave();
+
+            if (continueButton != null)
+            {
+                continueButton.interactable = hasSave;
+
+                if (hasSave)
+                {
+                    GameState lastSave = SaveSystem.LoadLastSave();
+                    if (lastSave != null)
+                    {
+                        TextMeshProUGUI buttonText = continueButton.GetComponentInChildren<TextMeshProUGUI>();
+                        if (buttonText != null)
+                        {
+                            buttonText.text = $"CONTINUER\nSlot {lastSave.saveSlot}: Vague {lastSave.currentWave}";
+                        }
+
+                        if (saveInfoText != null)
+                        {
+                            saveInfoText.text = $"Dernière partie:\nVague {lastSave.currentWave} - Score: {lastSave.score}";
+                        }
+                    }
+                }
+                else
+                {
+                    TextMeshProUGUI buttonText = continueButton.GetComponentInChildren<TextMeshProUGUI>();
+                    if (buttonText != null)
+                    {
+                        buttonText.text = "CONTINUER\n(Aucune sauvegarde)";
+                    }
+                }
+            }
+        }
+
+        public void LoadSavesInfo()
+        {
+            // Slot 1
+            GameState save1 = SaveSystem.LoadFromSlot(1);
+            if (save1 != null)
+            {
+                if (saveSlot1Text != null)
+                {
+                    saveSlot1Text.text = $"Vague {save1.currentWave}\nScore: {save1.score}\n{save1.saveDate}";
+                }
+                if (saveSlot1Panel != null) saveSlot1Panel.SetActive(true);
+                if (emptySlot1Panel != null) emptySlot1Panel.SetActive(false);
+                if (saveSlot1Button != null) saveSlot1Button.interactable = true;
+            }
+            else
+            {
+                if (saveSlot1Text != null)
+                {
+                    saveSlot1Text.text = "SLOT 1\n(Vide)";
+                }
+                if (saveSlot1Panel != null) saveSlot1Panel.SetActive(false);
+                if (emptySlot1Panel != null) emptySlot1Panel.SetActive(true);
+                if (saveSlot1Button != null) saveSlot1Button.interactable = false;
+            }
+
+            // Slot 2
+            GameState save2 = SaveSystem.LoadFromSlot(2);
+            if (save2 != null)
+            {
+                if (saveSlot2Text != null)
+                {
+                    saveSlot2Text.text = $"Vague {save2.currentWave}\nScore: {save2.score}\n{save2.saveDate}";
+                }
+                if (saveSlot2Panel != null) saveSlot2Panel.SetActive(true);
+                if (emptySlot2Panel != null) emptySlot2Panel.SetActive(false);
+                if (saveSlot2Button != null) saveSlot2Button.interactable = true;
+            }
+            else
+            {
+                if (saveSlot2Text != null)
+                {
+                    saveSlot2Text.text = "SLOT 2\n(Vide)";
+                }
+                if (saveSlot2Panel != null) saveSlot2Panel.SetActive(false);
+                if (emptySlot2Panel != null) emptySlot2Panel.SetActive(true);
+                if (saveSlot2Button != null) saveSlot2Button.interactable = false;
+            }
+
+            // Slot 3
+            GameState save3 = SaveSystem.LoadFromSlot(3);
+            if (save3 != null)
+            {
+                if (saveSlot3Text != null)
+                {
+                    saveSlot3Text.text = $"Vague {save3.currentWave}\nScore: {save3.score}\n{save3.saveDate}";
+                }
+                if (saveSlot3Panel != null) saveSlot3Panel.SetActive(true);
+                if (emptySlot3Panel != null) emptySlot3Panel.SetActive(false);
+                if (saveSlot3Button != null) saveSlot3Button.interactable = true;
+            }
+            else
+            {
+                if (saveSlot3Text != null)
+                {
+                    saveSlot3Text.text = "SLOT 3\n(Vide)";
+                }
+                if (saveSlot3Panel != null) saveSlot3Panel.SetActive(false);
+                if (emptySlot3Panel != null) emptySlot3Panel.SetActive(true);
+                if (saveSlot3Button != null) saveSlot3Button.interactable = false;
+            }
+        }
+
+        // ============ FONCTIONS DE CHARGEMENT ============
+
+        public void ContinueGame()
+        {
+            GameState lastSave = SaveSystem.LoadLastSave();
+            if (lastSave != null)
+            {
+                PlaySwoosh();
+                PlayerPrefs.SetInt("LoadSlot", lastSave.saveSlot);
+                PlayerPrefs.Save();
+                LoadScene("mainScene");
+            }
+            else
+            {
+                Debug.LogWarning("Aucune sauvegarde trouvée !");
+                PlayHover();
+            }
+        }
+
+        public void LoadGameSlot1() { LoadGameFromSlot(1); }
+        public void LoadGameSlot2() { LoadGameFromSlot(2); }
+        public void LoadGameSlot3() { LoadGameFromSlot(3); }
+
+        private void LoadGameFromSlot(int slot)
+        {
+            if (SaveSystem.HasSaveInSlot(slot))
+            {
+                PlaySwoosh();
+                PlayerPrefs.SetInt("LoadSlot", slot);
+                PlayerPrefs.Save();
+                LoadScene("mainScene");
+            }
+            else
+            {
+                Debug.LogWarning($"Aucune sauvegarde dans le slot {slot} !");
+                PlayHover();
+            }
+        }
+
+        // ============ FONCTIONS DE SUPPRESSION ============
+
+        public void DeleteSaveSlot1() { DeleteSaveConfirmation(1); }
+        public void DeleteSaveSlot2() { DeleteSaveConfirmation(2); }
+        public void DeleteSaveSlot3() { DeleteSaveConfirmation(3); }
+
+        private void DeleteSaveConfirmation(int slot)
+        {
+            PlayHover();
+            SaveSystem.DeleteSave(slot);
+            LoadSavesInfo();
+            CheckSaveFile();
+        }
+
+        // ============ NOUVELLE PARTIE ============
+
+        public void NewGame()
+        {
+            PlaySwoosh();
+
+            int bestSlot = SaveSystem.GetBestSlotForNewGame();
+            
+            PlayerPrefs.SetInt("NewGameSlot", bestSlot);
+            PlayerPrefs.SetInt("NewGame", 1);
+            PlayerPrefs.Save();
+            
+            Debug.Log($"Nouvelle partie démarrée dans le slot {bestSlot}");
+
+            if (SaveSystem.HasSaveInSlot(bestSlot) && newGameConfirmationPanel != null)
+            {
+                newGameConfirmationPanel.SetActive(true);
+            }
+            else
+            {
+                StartNewGame();
+            }
+        }
+
+        public void StartNewGame()
+        {
+            LoadScene("mainScene");
+        }
+
+        public void ConfirmNewGame()
+        {
+            int slot = PlayerPrefs.GetInt("NewGameSlot", 1);
+            SaveSystem.DeleteSave(slot);
+            
+            if (newGameConfirmationPanel != null)
+            {
+                newGameConfirmationPanel.SetActive(false);
+            }
+            
+            LoadScene("mainScene");
+        }
+
+        public void CancelNewGame()
+        {
+            PlayHover();
+
+            if (newGameConfirmationPanel != null)
+            {
+                newGameConfirmationPanel.SetActive(false);
+            }
+        }
+
+        // ============ NAVIGATION MENUS ============
+
+        public void PlayCampaign()
+        {
+            PlaySwoosh();
+            exitMenu.SetActive(false);
+            if (creditsMenu) creditsMenu.SetActive(false);
             if (savesMenu) savesMenu.SetActive(false);
             playMenu.SetActive(true);
-		}
-		
-		public void ReturnMenu(){
-			PlaySwoosh();
-			playMenu.SetActive(false);
-			if(creditsMenu) creditsMenu.SetActive(false);
-			exitMenu.SetActive(false);
-			if(newGameConfirmationPanel) newGameConfirmationPanel.SetActive(false);
-			if (savesMenu) savesMenu.SetActive(false);
-			mainMenu.SetActive(true);
-		}
+        }
 
-		public void  DisablePlayCampaign(){
-			playMenu.SetActive(false);
-		}
+        public void ReturnMenu()
+        {
+            PlaySwoosh();
+            playMenu.SetActive(false);
+            if (creditsMenu) creditsMenu.SetActive(false);
+            exitMenu.SetActive(false);
+            if (newGameConfirmationPanel) newGameConfirmationPanel.SetActive(false);
+            if (savesMenu) savesMenu.SetActive(false);
+            mainMenu.SetActive(true);
+        }
 
-        // Are You Sure - Quit Panel Pop Up
+        public void DisablePlayCampaign()
+        {
+            playMenu.SetActive(false);
+        }
+
         public void AreYouSure()
         {
             PlaySwoosh();
             exitMenu.SetActive(true);
-            if(creditsMenu) creditsMenu.SetActive(false);
+            if (creditsMenu) creditsMenu.SetActive(false);
             if (savesMenu) savesMenu.SetActive(false);
             DisablePlayCampaign();
         }
 
-        //Ouvrir le menu des crédits
         public void CreditsMenu()
         {
             PlaySwoosh();
@@ -265,68 +490,88 @@ namespace SlimUI.ModernMenu{
             exitMenu.SetActive(false);
         }
 
-        //Ouvrir le menu des sauvegardes
         public void SavesMenus()
         {
             PlaySwoosh();
             if (creditsMenu) creditsMenu.SetActive(false);
-            if (savesMenu) savesMenu.SetActive(true);
+            if (savesMenu)
+            {
+                savesMenu.SetActive(true);
+                LoadSavesInfo();
+            }
             exitMenu.SetActive(false);
         }
 
-        //Position de la caméra (Pour l'animation du menu)
-        public void Position2(){
-			DisablePlayCampaign();
-			CameraObject.SetFloat("Animate",1);
-		}
+        // ============ POSITION CAMERA ============
 
-		public void Position1(){
-			CameraObject.SetFloat("Animate",0);
-		}
+        public void Position2()
+        {
+            DisablePlayCampaign();
+            CameraObject.SetFloat("Animate", 1);
+        }
 
+        public void Position1()
+        {
+            CameraObject.SetFloat("Animate", 0);
+        }
 
-        //Désactivation et Navigation dans le Menu Settings
-        void DisablePanels(){
-			PanelSkin.SetActive(false);
-			PanelGame.SetActive(false);
-			lineGame.SetActive(false);
-			lineSkin.SetActive(false);
-		}
+        // ============ SETTINGS PANELS ============
 
-		public void GamePanel(){
-			DisablePanels();
-			PanelGame.SetActive(true);
-			lineGame.SetActive(true);
-		}
+        void DisablePanels()
+        {
+            PanelSkin.SetActive(false);
+            PanelGame.SetActive(false);
+            lineGame.SetActive(false);
+            lineSkin.SetActive(false);
+        }
 
-		public void SkinPanel(){
-			DisablePanels();
-			PanelSkin.SetActive(true);
-			lineSkin.SetActive(true);
-		}
+        public void GamePanel()
+        {
+            DisablePanels();
+            PanelGame.SetActive(true);
+            lineGame.SetActive(true);
+        }
 
-		//Sons Fx pour le menu
+        public void SkinPanel()
+        {
+            DisablePanels();
+            PanelSkin.SetActive(true);
+            lineSkin.SetActive(true);
+        }
 
-		public void PlayHover(){
-			hoverSound.Play();
-		}
+        // ============ FONCTIONS SCENE ============
 
-		public void PlaySFXHover(){
-			sliderSound.Play();
-		}
+        public void LoadScene(string sceneName)
+        {
+            SceneManager.LoadSceneAsync(sceneName);
+        }
 
-		public void PlaySwoosh(){
-			swooshSound.Play();
-		}
+        // ============ SONS FX ============
 
+        public void PlayHover()
+        {
+            hoverSound.Play();
+        }
 
-		//Quiter le jeu
-		public void QuitGame(){
-			#if UNITY_EDITOR
-				UnityEditor.EditorApplication.isPlaying = false;
-			#else
-				Application.Quit();
-			#endif
-		}
-	}
+        public void PlaySFXHover()
+        {
+            sliderSound.Play();
+        }
+
+        public void PlaySwoosh()
+        {
+            swooshSound.Play();
+        }
+
+        // ============ QUITTER LE JEU ============
+
+        public void QuitGame()
+        {
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
+        }
+    }
 }

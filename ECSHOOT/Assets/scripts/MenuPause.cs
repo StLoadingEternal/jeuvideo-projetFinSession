@@ -1,69 +1,156 @@
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
-using UnityEngine.UIElements;
+using UnityEngine.UI;
+using TMPro;
+using System;
 
 public class MenuPause : MonoBehaviour
 {
     public GameManager gameManagerScript;
+    
+    [Header("Save Menu UI")]
+    public GameObject saveMenuPanel;
+    public Button saveSlot1Button;
+    public Button saveSlot2Button;
+    public Button saveSlot3Button;
+    public TextMeshProUGUI saveSlot1Info;
+    public TextMeshProUGUI saveSlot2Info;
+    public TextMeshProUGUI saveSlot3Info;
+    public Button saveMenuCancelButton;
+    
+    [Header("UI Elements")]
+    public GameObject saveNotificationPanel;
+    public TextMeshProUGUI saveNotificationText;
+    public float notificationDisplayTime = 2f;
 
     void Start()
     {
         gameManagerScript = GameObject.Find("GameManager").GetComponent<GameManager>();
+        
+        if (saveNotificationPanel != null) saveNotificationPanel.SetActive(false);
+        if (saveMenuPanel != null) saveMenuPanel.SetActive(false);
+        
+        if (saveSlot1Button != null) saveSlot1Button.onClick.AddListener(() => SaveToSlot(1));
+        if (saveSlot2Button != null) saveSlot2Button.onClick.AddListener(() => SaveToSlot(2));
+        if (saveSlot3Button != null) saveSlot3Button.onClick.AddListener(() => SaveToSlot(3));
+        if (saveMenuCancelButton != null) saveMenuCancelButton.onClick.AddListener(CloseSaveMenu);
     }
 
     public void ResumeGame()
     {
         gameObject.SetActive(false);
         Time.timeScale = 1f;
+        CloseSaveMenu();
     }
 
     public void PauseGame()
     {
-        Debug.Log("Pause activée");
         gameObject.SetActive(true);
         Time.timeScale = 0f;
     }
 
     public void QuitGame()
     {
-        // Sauvegarder avant de quitter
         if (gameManagerScript != null)
-        {
-            gameManagerScript.SaveGame();
-            SceneManager.LoadScene("Menu_Scene");
+        {   
+            int currentSlot = gameManagerScript.GetCurrentSaveSlot();
+            if (currentSlot == 0)
+            {
+                currentSlot = PlayerPrefs.GetInt("LoadSlot", 1);
+            }
+            
+            gameManagerScript.SaveGame(currentSlot);
         }
         
         Time.timeScale = 1f;
-        //SceneNavigator.GoToMenu();
+        Invoke("LoadMenuScene", 1.5f);
     }
 
-    public void SaveGame()
+    private void LoadMenuScene()
     {
-        if (gameManagerScript != null)
+        SceneManager.LoadScene("Menu_Scene");
+    }
+
+    // ============ MENU DE SAUVEGARDE MANUELLE ============
+
+    public void OpenSaveMenu()
+    {
+        if (saveMenuPanel != null)
         {
-            gameManagerScript.SaveGame();
-            Debug.Log("Sauvegarde effectuée !");
+            saveMenuPanel.SetActive(true);
+            UpdateSaveMenuInfo();
         }
     }
 
-    public void LoadGame()
+    private void CloseSaveMenu()
+    {
+        if (saveMenuPanel != null)
+        {
+            saveMenuPanel.SetActive(false);
+        }
+    }
+
+    private void UpdateSaveMenuInfo()
+    {
+        UpdateSlotInfo(1, saveSlot1Info);
+        UpdateSlotInfo(2, saveSlot2Info);
+        UpdateSlotInfo(3, saveSlot3Info);
+    }
+
+    private void UpdateSlotInfo(int slot, TextMeshProUGUI textUI)
+    {
+        if (textUI == null) return;
+        
+        GameManager.GameState save = GameManager.SaveSystem.LoadFromSlot(slot);
+        if (save != null)
+        {
+            textUI.text = 
+                         $"Vague {save.currentWave}\n" +
+                         $"Score: {save.score}\n" +
+                         $"{save.saveDate}";
+        }
+        else
+        {
+            textUI.text = $"Slot {slot}:\n(Vide)";
+        }
+    }
+
+    private void SaveToSlot(int slot)
     {
         if (gameManagerScript != null)
         {
-            gameManagerScript.LoadGame();
-            Debug.Log("Chargement effectué !");
+            gameManagerScript.SaveGame(slot);
+            gameManagerScript.SetCurrentSaveSlot(slot);
+            ShowSaveNotification($"Sauvegardé dans le Slot {slot}");
+            CloseSaveMenu();
         }
     }
+
+    // ============ NOTIFICATION ============
+
+    private void ShowSaveNotification(string message)
+    {
+        if (saveNotificationPanel != null && saveNotificationText != null)
+        {
+            saveNotificationText.text = message;
+            saveNotificationPanel.SetActive(true);
+            Invoke("HideSaveNotification", notificationDisplayTime);
+        }
+    }
+
+    private void HideSaveNotification()
+    {
+        if (saveNotificationPanel != null)
+        {
+            saveNotificationPanel.SetActive(false);
+        }
+    }
+
+    // ============ AUTRES FONCTIONS ============
 
     public void NewGame()
     {
-        // Supprimer la sauvegarde existante
-        if (gameManagerScript != null)
-        {
-            gameManagerScript.DeleteSave();
-        }
-        
+        GameManager.SaveSystem.DeleteAllSaves();
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
