@@ -515,6 +515,7 @@ public class GameManager : MonoBehaviour
         
         if (!isGameOver && playerControllerScript != null && playerControllerScript.currentLives > 0)
         {
+            currentWave++;
             StartCoroutine(StartWave());
         }
     }
