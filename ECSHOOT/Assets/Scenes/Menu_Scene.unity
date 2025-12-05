@@ -7251,7 +7251,7 @@ PrefabInstance:
     - target: {fileID: 415493337217123926, guid: 0a68be1bd13d8694e8d8fe85574ac075, type: 3}
       propertyPath: m_Resource
       value: 
-      objectReference: {fileID: 8300000, guid: 1e7a587164fcbef45b40536469e6c432, type: 3}
+      objectReference: {fileID: 0}
     - target: {fileID: 415493337217123926, guid: 0a68be1bd13d8694e8d8fe85574ac075, type: 3}
       propertyPath: m_audioClip
       value: 
@@ -7306,7 +7306,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 575615810309282372, guid: 0a68be1bd13d8694e8d8fe85574ac075, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 150
+      value: 180
       objectReference: {fileID: 0}
     - target: {fileID: 575615810309282372, guid: 0a68be1bd13d8694e8d8fe85574ac075, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y

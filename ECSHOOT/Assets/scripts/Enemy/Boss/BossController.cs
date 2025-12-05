@@ -129,16 +129,14 @@ public class BossController : MonoBehaviour
             GameObject projectile = Instantiate(projectilePrefab, 
                 shootPoint.position, 
                 rotation);
-            
-            if (player != null)
-            {
-                projectile.transform.LookAt(player.position);
-            }
-            
+
+            // Calculer la direction vers le joueur (sans LookAt)
+            Vector3 directionToPlayer = (player.position - shootPoint.position).normalized;
+
             Rigidbody rb = projectile.GetComponent<Rigidbody>();
             if (rb != null)
             {
-                Vector3 directionToPlayer = (player.position - shootPoint.position).normalized;
+                //Vector3 directionToPlayer = (player.position - shootPoint.position).normalized;
                 rb.linearVelocity = directionToPlayer * projectileSpeed;
             }
         }
