@@ -1088,7 +1088,7 @@ MonoBehaviour:
   - {fileID: 3601637500637684081, guid: a857f2232cc29534ca336b7c90694a1a, type: 3}
   - {fileID: 65573549453961392, guid: b3b77f278f80b764c821a3d2ec40068d, type: 3}
   - {fileID: 5385254449323428017, guid: ae7e05da2de24de4d804d9da0990297d, type: 3}
-  dropChance: 100
+  dropChance: 50
 --- !u!54 &2931963419706719761
 Rigidbody:
   m_ObjectHideFlags: 0
