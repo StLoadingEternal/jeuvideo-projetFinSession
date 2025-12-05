@@ -22,11 +22,18 @@ public class BossController : MonoBehaviour
     
     private Transform player;
     private Rigidbody rb;
-
+    
+    [Header("Audio")]
+    private GameObject destructionObject;
+    private AudioSource destructionSound;
+    
     void Start()
     {
         player = GameObject.FindGameObjectWithTag("Player")?.transform;
         rb = GetComponent<Rigidbody>();
+        
+        destructionObject = GameObject.Find("crashEnemySound");
+        destructionSound = destructionObject.GetComponent<AudioSource>();
         
         // Créer un Layer pour les bosses si nécessaire
         gameObject.layer = LayerMask.NameToLayer("Boss");
@@ -116,9 +123,12 @@ public class BossController : MonoBehaviour
         {
             if (shootPoint == null) continue;
             
+            
+            Quaternion rotation = Quaternion.Euler(-90, transform.eulerAngles.y, -90);
+            
             GameObject projectile = Instantiate(projectilePrefab, 
                 shootPoint.position, 
-                Quaternion.identity);
+                rotation);
             
             if (player != null)
             {
@@ -132,7 +142,12 @@ public class BossController : MonoBehaviour
                 rb.linearVelocity = directionToPlayer * projectileSpeed;
             }
         }
+        
+        
     }
+    
+   
+
     
     
 }

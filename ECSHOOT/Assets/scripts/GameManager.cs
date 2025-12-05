@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using System.IO;
 using Newtonsoft.Json;
 using System;
+using UnityEngine.Serialization;
 
 public class GameManager : MonoBehaviour
 {
@@ -41,6 +42,7 @@ public class GameManager : MonoBehaviour
     public AudioSource gameOverSound;
     public AudioSource themeSound;
     public AudioSource destructionPlayerSound;
+    public AudioSource destructionSoundBoss;
 
     public bool IsBossWave => isBossWave;
     public int bossAlive = 0;
@@ -217,6 +219,8 @@ public class GameManager : MonoBehaviour
         playerControllerScript = player.GetComponent<PlayerController>();
         enemySpawnerScript = GameObject.Find("EnemySpawner").GetComponent<EnemySpawner>();
 
+        
+        
         // Appliquer la préférences de son et d'écran
         AudioListener.volume = GameSettings.MusicVolume;
         Screen.fullScreen = GameSettings.Fullscreen;
@@ -699,6 +703,12 @@ public class GameManager : MonoBehaviour
         
         if (isBoss)
         {
+            if (GameSettings.FXEnabled)
+            {
+                //Musique de destruction
+                destructionSoundBoss.Play();
+            }
+            
             bossAlive--;
             score += 500;
         }

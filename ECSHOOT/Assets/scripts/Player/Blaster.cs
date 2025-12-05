@@ -9,7 +9,7 @@ public class Blaster : MonoBehaviour
     private float fireRate = 0.5f;
     private float nextFire = 0f;
 
-    private bool isMultiShot = true;
+    private bool isMultiShot = false;
 
     [Header("Audio")]
     public AudioSource shotSound;

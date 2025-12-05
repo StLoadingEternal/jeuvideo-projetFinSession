@@ -18,6 +18,9 @@ namespace PowerUps
         public float shieldPowerUpDuration = 10f;
         public float speedBoostDuration = 10f; 
         
+        [Header("UI Timer")]
+        public PowerUpTimerUI powerUpTimerUI;
+        
         // États
         private bool isMultiShotActive = false;
         private float multiShotTimer = 0f;
@@ -29,7 +32,7 @@ namespace PowerUps
         
         
         [Header("Speed Boost Settings")]
-        public float speedMultiplier = 2f; // 50% plus rapide
+        public float speedMultiplier = 10f; // 50% plus rapide
         public float originalMoveSpeed; // Pour stocker la vitesse originale
         public float originalForwardSpeed; // Pour stocker la vitesse avant
         
@@ -38,6 +41,8 @@ namespace PowerUps
         private float speedBoostTimer = 0f;
         private Coroutine speedBoostCoroutine;
         
+        [Header("UI Link")]
+        public PowerUpUILinker powerUpUILinker;
         
         void Start()
         {
@@ -64,7 +69,7 @@ namespace PowerUps
         
         void Update()
         {
-            // Gérer le timer du multi-shot
+            //  le timer du multi-shot
             if (isMultiShotActive)
             {
                 multiShotTimer -= Time.deltaTime;
@@ -80,7 +85,7 @@ namespace PowerUps
                 shieldTimer -= Time.deltaTime;
             }
         
-            // AJOUT: Timer du speed boost
+       
             if (isSpeedBoostActive)
             {
                 speedBoostTimer -= Time.deltaTime;
@@ -89,65 +94,84 @@ namespace PowerUps
         
         // ============ MÉTHODES D'ACTIVATION ============
         
-        public void CollectFireRatePowerUp()
-        {
-            if (blasterLeft != null && blasterRight != null)
-            {
-                Debug.Log("Collecting fire rate powerup");
-                blasterLeft.ActivateFireRateBoost(powerUpDuration);
-                blasterRight.ActivateFireRateBoost(powerUpDuration);
-            }
-        }
         
         public void CollectMultiShotPowerUp()
         {
             isMultiShotActive = true;
             multiShotTimer = powerUpDuration;
-            
+    
             if (blasterLeft != null && blasterRight != null)
             {
-                Debug.Log("Collecting multi shot powerup");
                 blasterLeft.ActivateMultiShot(powerUpDuration);
                 blasterRight.ActivateMultiShot(powerUpDuration);
             }
             
-
+            if (powerUpUILinker != null)
+                powerUpUILinker.OnPowerUpCollected("MultiShot", powerUpDuration);
         }
+
 
         public void CollectSpeedPowerUp()
         {
-            // Arrêter le boost précédent s'il y en a un
             if (speedBoostCoroutine != null)
             {
                 StopCoroutine(speedBoostCoroutine);
             }
 
-            // Activer le speed boost
             isSpeedBoostActive = true;
             speedBoostTimer = speedBoostDuration;
-
-            // Appliquer le boost au joueur
             ApplySpeedBoostToPlayer(true);
-
-            // Démarrer la coroutine d'expiration
             speedBoostCoroutine = StartCoroutine(SpeedBoostExpireCountdown());
+            
+            if (powerUpUILinker != null)
+                powerUpUILinker.OnPowerUpCollected("Speed", speedBoostDuration);
+        }
 
+        public void CollectShieldPowerUp()
+        {
+            if (shieldController == null) return;
+    
+            if (shieldExpireCoroutine != null)
+            {
+                StopCoroutine(shieldExpireCoroutine);
+            }
+    
+            shieldController.ActivateShield(1f);
+            shieldTimer = shieldPowerUpDuration;
+            isShieldPowerUpActive = true;
+            shieldExpireCoroutine = StartCoroutine(ShieldExpireCountdown());
+            
+            if (powerUpUILinker != null)
+                powerUpUILinker.OnPowerUpCollected("Shield", shieldPowerUpDuration);
+    
+            ShowPowerUpMessage("Shield Activated!");
+        }
+
+        public void CollectFireRatePowerUp()
+        {
+            if (blasterLeft != null && blasterRight != null)
+            {
+                blasterLeft.ActivateFireRateBoost(powerUpDuration);
+                blasterRight.ActivateFireRateBoost(powerUpDuration);
+                
+                if (powerUpUILinker != null)
+                    powerUpUILinker.OnPowerUpCollected("FireRate", powerUpDuration);
+            }
         }
         
         void DeactivateSpeedBoost()
         {
             if (!isSpeedBoostActive) return;
-        
+
             isSpeedBoostActive = false;
             speedBoostTimer = 0f;
-        
-            // Retirer le boost du joueur
             ApplySpeedBoostToPlayer(false);
-        
             
+            if (powerUpUILinker != null)
+                powerUpUILinker.OnPowerUpEnded("Speed");
         }
+
         
-        // AJOUT: Coroutine pour l'expiration du speed boost
         IEnumerator SpeedBoostExpireCountdown()
         {
             yield return new WaitForSeconds(speedBoostDuration);
@@ -181,37 +205,11 @@ namespace PowerUps
             //         moveSpeedField.SetValue(playerController, originalMoveSpeed);
             //     }
             // }
-        
-            // OPTION 3: La meilleure approche - ajouter des méthodes dans PlayerController
-            // Voir ci-dessous pour les modifications à apporter à PlayerController
+            
         }
         
 
-        public void CollectShieldPowerUp()
-        {
-            if (shieldController == null)
-            {
-                return;
-            }
-            
-            // Arrêter la coroutine existante si elle tourne
-            if (shieldExpireCoroutine != null)
-            {
-                StopCoroutine(shieldExpireCoroutine);
-            }
-            
-            // Activer ou réinitialiser le shield
-            shieldController.ActivateShield(1f);
-            
-            // Démarrer le timer avec effet de fin
-            shieldTimer = shieldPowerUpDuration;
-            isShieldPowerUpActive = true;
-            
-            // Démarrer la coroutine d'expiration
-            shieldExpireCoroutine = StartCoroutine(ShieldExpireCountdown());
-            
-            ShowPowerUpMessage("Shield Activated!");
-        }
+        
         
         IEnumerator ShieldExpireCountdown()
         {
@@ -225,16 +223,17 @@ namespace PowerUps
         void DeactivateShieldWithBreakEffect()
         {
             if (!isShieldPowerUpActive) return;
-            
+    
             isShieldPowerUpActive = false;
             shieldTimer = 0f;
-            
-            // Jouer l'effet de breakage avant de désactiver
+    
             if (shieldController != null)
             {
                 shieldController.TriggerTimerBreakEffect();
             }
             
+            if (powerUpUILinker != null)
+                powerUpUILinker.OnPowerUpEnded("Shield");
         }
         
         // ============ UI ET FEEDBACK ============
@@ -242,8 +241,7 @@ namespace PowerUps
         void ShowPowerUpMessage(string message)
         {
         
-            // Ici vous pouvez ajouter votre système UI
-            // Par exemple: UIManager.Instance.ShowPowerUpMessage(message);
+      
         }
         
         // ============ GETTERS ============
@@ -271,20 +269,27 @@ namespace PowerUps
                 StopCoroutine(shieldExpireCoroutine);
                 shieldExpireCoroutine = null;
             }
-        
+
             if (speedBoostCoroutine != null)
             {
                 StopCoroutine(speedBoostCoroutine);
                 speedBoostCoroutine = null;
             }
-        
+
             // S'assurer que le speed boost est désactivé
             if (isSpeedBoostActive)
             {
                 DeactivateSpeedBoost();
             }
+            
+            if (powerUpTimerUI != null) powerUpTimerUI.StopAllTimers();
         }
         
-        
+        public float GetMultiShotTimeLeft() { return multiShotTimer; }
+    
+        public bool IsSpeedBoostActive() { return isSpeedBoostActive; }
+        public float GetSpeedBoostTimeLeft() { return speedBoostTimer; }
     }
+    
+    
 }

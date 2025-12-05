@@ -15,6 +15,7 @@ public class BossProjectile : MonoBehaviour
     
     public void Initialize(Vector3 shootDirection, float projectileSpeed)
     {
+        
         direction = shootDirection.normalized;
         speed = projectileSpeed;
     }
@@ -45,6 +46,7 @@ public class BossProjectile : MonoBehaviour
                 player.LoseLife(damage);
             }
             Destroy(gameObject);
+            
         }
         else if (other.CompareTag("fighterBullet"))
         {

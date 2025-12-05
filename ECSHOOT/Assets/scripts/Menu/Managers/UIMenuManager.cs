@@ -419,11 +419,6 @@ namespace SlimUI.ModernMenu
 
         public void StartNewGame()
         {
-            LoadScene("mainScene");
-        }
-
-        public void ConfirmNewGame()
-        {
             int slot = PlayerPrefs.GetInt("NewGameSlot", 1);
             SaveSystem.DeleteSave(slot);
             
@@ -434,6 +429,19 @@ namespace SlimUI.ModernMenu
             
             LoadScene("mainScene");
         }
+
+        // public void ConfirmNewGame()
+        // {
+        //     int slot = PlayerPrefs.GetInt("NewGameSlot", 1);
+        //     SaveSystem.DeleteSave(slot);
+        //     
+        //     if (newGameConfirmationPanel != null)
+        //     {
+        //         newGameConfirmationPanel.SetActive(false);
+        //     }
+        //     
+        //     LoadScene("mainScene");
+        // }
 
         public void CancelNewGame()
         {
