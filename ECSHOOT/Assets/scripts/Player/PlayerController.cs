@@ -20,7 +20,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("Vies")]
     public int maxLives = 3; // vies de base
-    public int currentLives;
+    public int currentLives = -1;
 
     //Références
     private Rigidbody rb;
@@ -39,7 +39,9 @@ public class PlayerController : MonoBehaviour
     
     [Header("Shield System")]
     public ShieldShaderController shieldController;
+
     
+
     void Start()
     {
         moveSpeed = initialSpeed;
@@ -110,7 +112,6 @@ public class PlayerController : MonoBehaviour
     }
 
 
-
     //Perte de vie
     public void LoseLife(int amount)
     {
@@ -128,11 +129,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void OnCollisionEnter(Collision collision)
-    {
-       
-    }
-
+ 
     private void OnTriggerEnter(Collider other)
     {
         
@@ -143,13 +140,16 @@ public class PlayerController : MonoBehaviour
             {
                 shieldController.ActivateShield();
             }
-            Destroy(other.gameObject);
+            //Destroy(other.gameObject); L'enemi gère déjà sa destruction avec animation
             return;
         }
         
         // PRENDRE UN HIT
         if (other.CompareTag("Enemy"))
         {
+            //Shader de hit
+            StartCoroutine(HitFlash());
+
             Vector3 hitPoint = other.ClosestPoint(transform.position);
             
             // Vérifier le shield d'abord
@@ -161,14 +161,14 @@ public class PlayerController : MonoBehaviour
                 // Si le shield est encore actif, arrêter ici
                 if (shieldController.GetShieldHealth() > 0)
                 {
-                    Destroy(other.gameObject);
+                    //Destroy(other.gameObject);L'enemi gère déjà sa destruction avec animation
                     return;
                 }
             }
             
             // Pas de shield ou shield cassé();
             LoseLife(1);
-            Destroy(other.gameObject);
+            //Destroy(other.gameObject); L'enemi gère déjà sa destruction avec animation
         }
     }
 

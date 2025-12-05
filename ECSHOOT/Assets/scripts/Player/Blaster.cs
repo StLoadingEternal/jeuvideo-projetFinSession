@@ -10,7 +10,10 @@ public class Blaster : MonoBehaviour
     private float nextFire = 0f;
 
     private bool isMultiShot = true;
-    
+
+    [Header("Audio")]
+    public AudioSource shotSound;
+
     // AJOUTS POUR LES POWER-UPS
     private bool isFireRateBoosted = false;
     private float fireRateMultiplier = 5f; // Tire 2x plus vite
@@ -26,9 +29,18 @@ public class Blaster : MonoBehaviour
     private float speedBoostTimer = 0f;
     private float damageBoostTimer = 0f;
 
+    private GameManager gameManager;
+    private void Start()
+    {
+        gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
+    }
     void Update()
     {
-        if (Input.GetMouseButton(0) && Time.time > nextFire)
+        //Bloquer quand c'est gameOver
+        if (gameManager.isGameOver)
+            return;
+
+        if (Input.GetMouseButton(0) && Time.time > nextFire )
         {
             // Calculer le fire rate (avec boost si actif)
             float currentFireRate = fireRate;
@@ -41,12 +53,24 @@ public class Blaster : MonoBehaviour
 
             if (isMultiShot)
             {
+                if (GameSettings.FXEnabled) {
+                    //shoot sound
+                    shotSound.Play(); 
+                }
+                
+
                 // Tirer 2 projectiles dans la même direction
                 Shoot();
                 Shoot(0.8f);
             }
             else
             {
+                if (GameSettings.FXEnabled)
+                {
+                    //shoot sound
+                    shotSound.Play();
+                }
+
                 Shoot();
             }
         }

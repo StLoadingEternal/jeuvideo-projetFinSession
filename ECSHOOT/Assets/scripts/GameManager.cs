@@ -9,6 +9,8 @@ using System;
 
 public class GameManager : MonoBehaviour
 {
+    
+    
     [Header("UI")]
     public TextMeshProUGUI waveText;
     public TextMeshProUGUI countdownText;
@@ -36,6 +38,11 @@ public class GameManager : MonoBehaviour
     [Header("Paramètres de spawn du Boss")]
     public float bossSpawnDistance = 120f;
     public float bossSpacing = 20f;
+
+    [Header("Audio")]
+    public AudioSource gameOverSound;
+    public AudioSource themeSound;
+    public AudioSource destructionPlayerSound;
 
     public bool IsBossWave => isBossWave;
     public int bossAlive = 0;
@@ -207,10 +214,22 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    
+    
     private void Start()
     {
         playerControllerScript = player.GetComponent<PlayerController>();
         enemySpawnerScript = GameObject.Find("EnemySpawner").GetComponent<EnemySpawner>();
+
+
+        //Système de sauvegarde (Static à la place)
+        saveSystem = new SaveSystem();
+
+        //Appliquer la préférences de son et d'écran
+        AudioListener.volume = GameSettings.MusicVolume;
+        Screen.fullScreen = GameSettings.Fullscreen;
+
+        //Initialiser correctement l'UI
 
         UpdateScoreUI();
         UpdateLifeUI();
@@ -407,20 +426,16 @@ public class GameManager : MonoBehaviour
 
     // ============ GESTION DU JEU ============
 
-    public void UpdateLifeUI(int currentLives = -1)
-    {
-        int livesToDisplay = currentLives;
-        
-        if (currentLives == -1 && playerControllerScript != null)
-        {
-            livesToDisplay = playerControllerScript.currentLives;
-        }
 
+    //Mis à jour vie (Attention problème d'affichages au début du jeu avec le playscriptcontroller)
+    public void UpdateLifeUI(int currentLives = 3)
+
+    {
         for (int i = 0; i < lifeImages.Length; i++)
         {
             if (lifeImages[i] != null)
             {
-                lifeImages[i].enabled = i < livesToDisplay;
+                lifeImages[i].enabled = i < currentLives;
             }
         }
     }
@@ -443,6 +458,12 @@ public class GameManager : MonoBehaviour
 
         DeleteCurrentSave();
         DestroyAllEnemies();
+
+        //Jouer le son GameOver
+        themeSound.Stop();
+        destructionPlayerSound.Play();
+        gameOverSound.Play();
+
     }
 
     public void RetryGame()
@@ -469,12 +490,11 @@ public class GameManager : MonoBehaviour
 
     IEnumerator StartWave()
     {
+        //Bloquer les vagues en cas de gamesOver
         if (isGameOver)
             yield break;
 
         currentWave++;
-        UpdateScoreUI();
-        UpdateLifeUI();
 
         if (!isNewGame || currentWave > 1)
         {
@@ -602,8 +622,9 @@ public class GameManager : MonoBehaviour
     {
         float countdown = waveDuration + (currentWave - 1) * 5;
 
-        while (countdown > 0)
+        while (countdown > 0 && enemiesAlive > 0)
         {
+            //Bloquer les vagues en cas de gamesOver
             if (isGameOver)
                 yield break;
 
@@ -626,10 +647,15 @@ public class GameManager : MonoBehaviour
             DestroyAllEnemies();
         }
 
+
         if (!isGameOver && playerControllerScript != null && playerControllerScript.currentLives > 0)
         {
+
+            //Lancer une nouvelle vague
+
             StartCoroutine(StartWave());
         }
+        
     }
 
     void StartBossCountdown()
@@ -695,7 +721,7 @@ public class GameManager : MonoBehaviour
             score += 100;
         }
         
-        UpdateScoreUI();
+        UpdateScoreUI();//Peut - être ne pas donner de point en cas de collision
        
         if (isBoss || currentWave % 3 == 0)
         {
