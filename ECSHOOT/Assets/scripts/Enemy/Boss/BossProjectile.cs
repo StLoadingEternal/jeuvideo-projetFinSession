@@ -53,6 +53,8 @@ public class BossProjectile : MonoBehaviour
             Destroy(other.gameObject);
             Destroy(gameObject);
         }
+        
+        Destroy(gameObject);
     }
     
     
