@@ -124,7 +124,7 @@ public class BossController : MonoBehaviour
             if (shootPoint == null) continue;
             
             
-            Quaternion rotation = Quaternion.Euler(-90, transform.eulerAngles.y, -90);
+            Quaternion rotation = Quaternion.Euler(0, 90, 0);
             
             GameObject projectile = Instantiate(projectilePrefab, 
                 shootPoint.position, 

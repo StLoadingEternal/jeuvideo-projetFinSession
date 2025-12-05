@@ -1,8 +1,9 @@
+using System;
+using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using TMPro;
-using System;
 
 public class MenuPause : MonoBehaviour
 {
@@ -68,7 +69,7 @@ public class MenuPause : MonoBehaviour
 
     private void LoadMenuScene()
     {
-        SceneManager.LoadScene("Menu_Scene");
+        SceneNavigator.GoToMenu();
     }
 
     // ============ MENU DE SAUVEGARDE MANUELLE ============
@@ -101,7 +102,7 @@ public class MenuPause : MonoBehaviour
     {
         if (textUI == null) return;
         
-        GameManager.GameState save = GameManager.SaveSystem.LoadFromSlot(slot);
+        GameState save = SaveSystem.LoadFromSlot(slot);
         if (save != null)
         {
             textUI.text = 
@@ -150,7 +151,7 @@ public class MenuPause : MonoBehaviour
 
     public void NewGame()
     {
-        GameManager.SaveSystem.DeleteAllSaves();
+        SaveSystem.DeleteAllSaves();
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }

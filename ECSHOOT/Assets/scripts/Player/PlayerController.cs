@@ -20,7 +20,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("Vies")]
     public int maxLives = 3; // vies de base
-    public int currentLives = -1;
+    public int currentLives = -1;//Vie assignées par le game manager en fonction des états
 
     //Références
     private Rigidbody rb;
@@ -45,7 +45,6 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         moveSpeed = initialSpeed;
-        currentLives = maxLives;
         gameManagerScript = GameObject.Find("GameManager").GetComponent<GameManager>();
         rb = GetComponent<Rigidbody>();
 

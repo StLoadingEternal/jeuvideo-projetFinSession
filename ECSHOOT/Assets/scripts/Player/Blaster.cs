@@ -40,6 +40,10 @@ public class Blaster : MonoBehaviour
         if (gameManager.isGameOver)
             return;
 
+        // Si le jeu est en pause → pas de tir
+        if (Time.timeScale == 0f)
+            return;
+
         if (Input.GetMouseButton(0) && Time.time > nextFire )
         {
             // Calculer le fire rate (avec boost si actif)

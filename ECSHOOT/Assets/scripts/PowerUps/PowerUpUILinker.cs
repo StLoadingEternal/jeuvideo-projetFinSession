@@ -16,10 +16,18 @@ public class PowerUpUILinker : MonoBehaviour
     {
         // Trouver les composants si non assignés
         if (powerUpTimerUI == null)
-            powerUpTimerUI = FindObjectOfType<PowerUpTimerUI>();
-        
+        {
+            GameObject timerObj = GameObject.Find("PowerUpTimerUI");
+            if (timerObj != null)
+                powerUpTimerUI = timerObj.GetComponent<PowerUpTimerUI>();
+        }
+
         if (powerUpManager == null)
-            powerUpManager = FindObjectOfType<PowerUpManager>();
+        {
+            GameObject managerObj = GameObject.Find("PowerUpManager");
+            if (managerObj != null)
+                powerUpManager = managerObj.GetComponent<PowerUpManager>();
+        }
     }
 
     void Update()

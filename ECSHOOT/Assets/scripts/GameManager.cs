@@ -58,162 +58,7 @@ public class GameManager : MonoBehaviour
     private int currentSaveSlot = 0;
     private bool isNewGame = false;
 
-    // ============ SYSTÈME DE SAUVEGARDE ============
-
-    [System.Serializable]
-    public class GameState
-    {
-        public int score;
-        public int lives;
-        public int currentWave;
-        public string saveDate;
-        public int saveSlot;
-
-        public GameState(int score, int lives, int currentWave, int slot = 1)
-        {
-            this.score = score;
-            this.lives = lives;
-            this.currentWave = currentWave;
-            this.saveSlot = slot;
-            this.saveDate = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
-        }
-    }
-
-    public static class SaveSystem
-    {
-        private static readonly string saveFolder = Application.persistentDataPath;
-        private static string lastSaveSlotKey = "LastSaveSlot";
-
-        public static void SaveGame(GameState state)
-        {
-            try
-            {
-                string savePath = Path.Combine(saveFolder, $"save_slot_{state.saveSlot}.json");
-                string json = JsonConvert.SerializeObject(state, Formatting.Indented);
-                File.WriteAllText(savePath, json);
-
-                PlayerPrefs.SetInt(lastSaveSlotKey, state.saveSlot);
-                PlayerPrefs.Save();
-
-                Debug.Log($"Jeu sauvegardé dans le slot {state.saveSlot}");
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError("Erreur sauvegarde : " + e.Message);
-            }
-        }
-
-        public static GameState LoadFromSlot(int slot)
-        {
-            string savePath = Path.Combine(saveFolder, $"save_slot_{slot}.json");
-
-            if (!File.Exists(savePath))
-            {
-                return null;
-            }
-
-            try
-            {
-                string json = File.ReadAllText(savePath);
-                GameState state = JsonConvert.DeserializeObject<GameState>(json);
-                return state;
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError("Erreur chargement : " + e.Message);
-                return null;
-            }
-        }
-
-        public static GameState LoadLastSave()
-        {
-            int lastSlot = PlayerPrefs.GetInt(lastSaveSlotKey, 0);
-            if (lastSlot > 0)
-            {
-                return LoadFromSlot(lastSlot);
-            }
-            return null;
-        }
-
-        public static bool HasSaveInSlot(int slot)
-        {
-            string savePath = Path.Combine(saveFolder, $"save_slot_{slot}.json");
-            return File.Exists(savePath);
-        }
-
-        public static bool CheckHasSave()
-        {
-            for (int i = 1; i <= 3; i++)
-            {
-                if (HasSaveInSlot(i))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public static void DeleteSave(int slot)
-        {
-            string savePath = Path.Combine(saveFolder, $"save_slot_{slot}.json");
-            if (File.Exists(savePath))
-            {
-                File.Delete(savePath);
-                Debug.Log($"Sauvegarde slot {slot} supprimée");
-            }
-        }
-
-        public static void DeleteAllSaves()
-        {
-            for (int i = 1; i <= 3; i++)
-            {
-                DeleteSave(i);
-            }
-        }
-
-        public static int GetLastSaveSlot()
-        {
-            return PlayerPrefs.GetInt(lastSaveSlotKey, 0);
-        }
-
-        public static int GetBestSlotForNewGame()
-        {
-            for (int i = 1; i <= 3; i++)
-            {
-                if (!HasSaveInSlot(i))
-                {
-                    return i;
-                }
-            }
-            
-            return FindOldestSaveSlot();
-        }
-
-        private static int FindOldestSaveSlot()
-        {
-            DateTime oldestDate = DateTime.MaxValue;
-            int oldestSlot = 1;
-            
-            for (int i = 1; i <= 3; i++)
-            {
-                GameState save = LoadFromSlot(i);
-                if (save != null && !string.IsNullOrEmpty(save.saveDate))
-                {
-                    if (DateTime.TryParse(save.saveDate, out DateTime saveDate))
-                    {
-                        if (saveDate < oldestDate)
-                        {
-                            oldestDate = saveDate;
-                            oldestSlot = i;
-                        }
-                    }
-                }
-            }
-            
-            return oldestSlot;
-        }
-    }
-
+  
     private void Start()
     {
         playerControllerScript = player.GetComponent<PlayerController>();
@@ -226,8 +71,6 @@ public class GameManager : MonoBehaviour
         Screen.fullScreen = GameSettings.Fullscreen;
 
         // Initialiser correctement l'UI
-        UpdateScoreUI();
-        UpdateLifeUI();
         gameOverPanel.SetActive(false);
 
         menuPauseScript = MenuPause.GetComponent<MenuPause>();
@@ -296,7 +139,7 @@ public class GameManager : MonoBehaviour
             
             if (playerControllerScript != null)
             {
-                playerControllerScript.currentLives = 3;
+                playerControllerScript.currentLives = playerControllerScript.maxLives;
             }
 
             PlayerPrefs.DeleteKey("NewGame");
@@ -337,7 +180,7 @@ public class GameManager : MonoBehaviour
             }
 
             UpdateScoreUI();
-            UpdateLifeUI();
+            UpdateLifeUI(playerControllerScript.currentLives);
             
             Debug.Log($"Partie chargée depuis le slot {state.saveSlot}");
             
@@ -351,7 +194,7 @@ public class GameManager : MonoBehaviour
             
             if (playerControllerScript != null)
             {
-                playerControllerScript.currentLives = 3;
+                playerControllerScript.currentLives = playerControllerScript.maxLives;
                 UpdateLifeUI();
             }
             currentSaveSlot = 1;
@@ -375,14 +218,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public int GetCurrentScore() { return score; }
-    public int GetCurrentWave() { return currentWave; }
-    public int GetCurrentLives() 
-    { 
-        if (playerControllerScript != null) 
-            return playerControllerScript.currentLives; 
-        return 3; 
-    }
 
     public void StartNewGameInSlot(int slot)
     {
@@ -421,7 +256,7 @@ public class GameManager : MonoBehaviour
 
     // ============ GESTION DU JEU ============
 
-    // Mis à jour vie (Attention problème d'affichages au début du jeu avec le playscriptcontroller)
+    // Mis à jour vie 
     public void UpdateLifeUI(int currentLives = 3)
     {
         for (int i = 0; i < lifeImages.Length; i++)
@@ -485,10 +320,6 @@ public class GameManager : MonoBehaviour
         // Bloquer les vagues en cas de gameOver
         if (isGameOver)
             yield break;
-
-        currentWave++;
-        UpdateScoreUI();
-        UpdateLifeUI();
 
         if (!isNewGame || currentWave > 1)
         {
@@ -596,7 +427,7 @@ public class GameManager : MonoBehaviour
             EnemyHealth bossHealth = boss.GetComponent<EnemyHealth>();
             if (bossHealth != null)
             {
-                bossHealth.maxHealth = 20 + (bossAppearanceCount * 10);
+                bossHealth.maxHealth = 30 + (bossAppearanceCount * 10);
             }
         
             bossAlive++;
@@ -644,6 +475,7 @@ public class GameManager : MonoBehaviour
         if (!isGameOver && playerControllerScript != null && playerControllerScript.currentLives > 0)
         {
             // Lancer une nouvelle vague
+            currentWave++;
             StartCoroutine(StartWave());
         }
     }

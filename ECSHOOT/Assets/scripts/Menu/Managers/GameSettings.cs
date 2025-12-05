@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public static class GameSettings
+public class GameSettings : MonoBehaviour
 {
     // Keys
     private const string KEY_MUSIC_VOLUME = "MusicVolume";

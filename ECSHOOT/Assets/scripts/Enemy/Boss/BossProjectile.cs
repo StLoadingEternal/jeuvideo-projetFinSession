@@ -15,7 +15,6 @@ public class BossProjectile : MonoBehaviour
     
     public void Initialize(Vector3 shootDirection, float projectileSpeed)
     {
-        
         direction = shootDirection.normalized;
         speed = projectileSpeed;
     }
