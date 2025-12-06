@@ -7,7 +7,7 @@ public class GameSettings : MonoBehaviour
     private const string KEY_FX_ENABLED = "FXEnabled";
     private const string KEY_FULLSCREEN = "FullscreenEnabled";
 
-    // Volume musique (0–1)
+    // Volume musique (0ï¿½1)
     public static float MusicVolume
     {
         get => PlayerPrefs.GetFloat(KEY_MUSIC_VOLUME, 1f);
@@ -18,7 +18,7 @@ public class GameSettings : MonoBehaviour
         }
     }
 
-    // FX activés ou non
+    // FX actives ou non
     public static bool FXEnabled
     {
         get => PlayerPrefs.GetInt(KEY_FX_ENABLED, 1) == 1;

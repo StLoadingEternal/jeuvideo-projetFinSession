@@ -45,7 +45,9 @@ public class SaveSystem
             Debug.LogError("Erreur sauvegarde : " + e.Message);
         }
     }
-
+    
+    
+    // Recupere une partie d'un slot
     public static GameState LoadFromSlot(int slot)
     {
         string savePath = Path.Combine(saveFolder, $"save_slot_{slot}.json");
@@ -67,9 +69,11 @@ public class SaveSystem
             return null;
         }
     }
-
+    
+    // Recharge la derniere sauvegarde quand on clique sur le bouton continue
     public static GameState LoadLastSave()
     {
+        // Recuperation du slot de sauvegarde dans les preferences joueur
         int lastSlot = PlayerPrefs.GetInt(lastSaveSlotKey, 0);
         if (lastSlot > 0)
         {
@@ -78,12 +82,17 @@ public class SaveSystem
         return null;
     }
 
+    // Cette methode permet de verifier si le slot contient une sauvegarde
+    // elle retourne un booleen
     public static bool HasSaveInSlot(int slot)
     {
+        
         string savePath = Path.Combine(saveFolder, $"save_slot_{slot}.json");
         return File.Exists(savePath);
     }
-
+    
+    // Regarder s'il y'a au moins une sauvegarde.
+    // On va pouvoir recharger la partie depuis cette sauvegarde
     public static bool CheckHasSave()
     {
         for (int i = 1; i <= 3; i++)
@@ -95,7 +104,8 @@ public class SaveSystem
         }
         return false;
     }
-
+    
+    // Supprimer la sauvegarde d'une slot
     public static void DeleteSave(int slot)
     {
         string savePath = Path.Combine(saveFolder, $"save_slot_{slot}.json");
@@ -105,7 +115,7 @@ public class SaveSystem
             Debug.Log($"Sauvegarde slot {slot} supprimée");
         }
     }
-
+    
     public static void DeleteAllSaves()
     {
         for (int i = 1; i <= 3; i++)
@@ -131,7 +141,8 @@ public class SaveSystem
 
         return FindOldestSaveSlot();
     }
-
+    
+    //Trouver le slot le plus vieux (date) 
     private static int FindOldestSaveSlot()
     {
         DateTime oldestDate = DateTime.MaxValue;

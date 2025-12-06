@@ -9,24 +9,28 @@ using System;
 
 namespace SlimUI.ModernMenu
 {
+    /// <summary>
+    /// Gestionnaire principal du menu UI. Contrôle la navigation, les sauvegardes et les paramètres du menu principal.
+    /// </summary>
     public class UIMenuManager : MonoBehaviour
     {
-        private Animator CameraObject;
+        private Animator CameraObject; // Référence à l'Animator de la caméra pour les transitions
 
         [Header("MENUS")]
-        public GameObject mainMenu;
-        public GameObject firstMenu;
-        public GameObject playMenu;
-        public GameObject exitMenu;
-        public GameObject creditsMenu;
-        public GameObject savesMenu;
+        public GameObject mainMenu; // Menu principal
+        public GameObject firstMenu; // Premier menu (écran titre)
+        public GameObject playMenu; // Menu de sélection de jeu
+        public GameObject exitMenu; // Menu de confirmation de sortie
+        public GameObject creditsMenu; // Menu des crédits
+        public GameObject savesMenu; // Menu de gestion des sauvegardes
 
         [Header("SAUVEGARDE")]
-        public Button continueButton;
-        public TextMeshProUGUI saveInfoText;
-        public GameObject newGameConfirmationPanel;
+        public Button continueButton; // Bouton "Continuer"
+        public TextMeshProUGUI saveInfoText; // Texte d'information sur la sauvegarde
+        public GameObject newGameConfirmationPanel; // Panel de confirmation pour nouvelle partie
 
         [Header("LOAD SAVES - UI Elements")]
+        // Boutons et UI pour les 3 slots de sauvegarde
         public Button saveSlot1Button;
         public Button saveSlot2Button;
         public Button saveSlot3Button;
@@ -40,33 +44,40 @@ namespace SlimUI.ModernMenu
         public GameObject emptySlot2Panel;
         public GameObject emptySlot3Panel;
 
+        // Enumération pour les thèmes disponibles
         public enum Theme { custom1, custom2, custom3 };
+        
         [Header("THEME SETTINGS")]
-        public Theme theme;
-        public ThemedUIData themeController;
+        public Theme theme; // Thème actuel
+        public ThemedUIData themeController; // Contrôleur de thème UI
 
         [Header("PANELS")]
-        public GameObject mainCanvas;
-        public GameObject PanelSkin;
-        public GameObject PanelGame;
+        public GameObject mainCanvas; // Canvas principal
+        public GameObject PanelSkin; // Panel des skins
+        public GameObject PanelGame; // Panel des paramètres jeu
 
         [Header("SETTINGS SCREEN")]
-        public GameObject lineGame;
-        public GameObject lineSkin;
+        public GameObject lineGame; // Ligne décorative pour le panel jeu
+        public GameObject lineSkin; // Ligne décorative pour le panel skin
 
         [Header("SFX")]
-        public AudioSource hoverSound;
-        public AudioSource sliderSound;
-        public AudioSource swooshSound;
+        public AudioSource hoverSound; // Son de survol
+        public AudioSource sliderSound; // Son de slider
+        public AudioSource swooshSound; // Son de transition
 
+        /// <summary>
+        /// Initialisation au démarrage
+        /// </summary>
         void Start()
         {
+            // Récupère l'Animator de la caméra
             CameraObject = transform.GetComponent<Animator>();
 
-            //Appliquer les préférences au lancement 
+            // Applique les préférences sauvegardées
             AudioListener.volume = GameSettings.MusicVolume;
             Screen.fullScreen = GameSettings.Fullscreen;
 
+            // Initialise l'état des menus
             playMenu.SetActive(false);
             exitMenu.SetActive(false);
             if (creditsMenu) creditsMenu.SetActive(false);
@@ -75,10 +86,13 @@ namespace SlimUI.ModernMenu
             firstMenu.SetActive(true);
             mainMenu.SetActive(true);
 
+            // Vérifie les sauvegardes existantes
             CheckSaveFile();
         }
 
-       
+        /// <summary>
+        /// Vérifie l'existence de sauvegardes et met à jour le bouton Continuer
+        /// </summary>
         private void CheckSaveFile()
         {
             bool hasSave = SaveSystem.CheckHasSave();
@@ -89,6 +103,7 @@ namespace SlimUI.ModernMenu
 
                 if (hasSave)
                 {
+                    // Charge la dernière sauvegarde et affiche ses infos
                     GameState lastSave = SaveSystem.LoadLastSave();
                     if (lastSave != null)
                     {
@@ -106,6 +121,7 @@ namespace SlimUI.ModernMenu
                 }
                 else
                 {
+                    // Aucune sauvegarde trouvée
                     TextMeshProUGUI buttonText = continueButton.GetComponentInChildren<TextMeshProUGUI>();
                     if (buttonText != null)
                     {
@@ -115,9 +131,12 @@ namespace SlimUI.ModernMenu
             }
         }
 
+        /// <summary>
+        /// Charge et affiche les informations des sauvegardes pour les 3 slots
+        /// </summary>
         public void LoadSavesInfo()
         {
-            // Slot 1
+            // ============ SLOT 1 ============
             GameState save1 = SaveSystem.LoadFromSlot(1);
             if (save1 != null)
             {
@@ -140,7 +159,7 @@ namespace SlimUI.ModernMenu
                 if (saveSlot1Button != null) saveSlot1Button.interactable = false;
             }
 
-            // Slot 2
+            // ============ SLOT 2 ============
             GameState save2 = SaveSystem.LoadFromSlot(2);
             if (save2 != null)
             {
@@ -163,7 +182,7 @@ namespace SlimUI.ModernMenu
                 if (saveSlot2Button != null) saveSlot2Button.interactable = false;
             }
 
-            // Slot 3
+            // ============ SLOT 3 ============
             GameState save3 = SaveSystem.LoadFromSlot(3);
             if (save3 != null)
             {
@@ -189,6 +208,9 @@ namespace SlimUI.ModernMenu
 
         // ============ FONCTIONS DE CHARGEMENT ============
 
+        /// <summary>
+        /// Continue la dernière partie sauvegardée
+        /// </summary>
         public void ContinueGame()
         {
             GameState lastSave = SaveSystem.LoadLastSave();
@@ -206,10 +228,15 @@ namespace SlimUI.ModernMenu
             }
         }
 
+        // Fonctions publiques pour les boutons de slots
         public void LoadGameSlot1() { LoadGameFromSlot(1); }
         public void LoadGameSlot2() { LoadGameFromSlot(2); }
         public void LoadGameSlot3() { LoadGameFromSlot(3); }
 
+        /// <summary>
+        /// Charge une partie depuis un slot spécifique
+        /// </summary>
+        /// <param name="slot">Numéro du slot (1-3)</param>
         private void LoadGameFromSlot(int slot)
         {
             if (SaveSystem.HasSaveInSlot(slot))
@@ -228,24 +255,33 @@ namespace SlimUI.ModernMenu
 
         // ============ FONCTIONS DE SUPPRESSION ============
 
+        // Fonctions publiques pour les boutons de suppression
         public void DeleteSaveSlot1() { DeleteSaveConfirmation(1); }
         public void DeleteSaveSlot2() { DeleteSaveConfirmation(2); }
         public void DeleteSaveSlot3() { DeleteSaveConfirmation(3); }
 
+        /// <summary>
+        /// Supprime une sauvegarde après confirmation
+        /// </summary>
+        /// <param name="slot">Numéro du slot à supprimer</param>
         private void DeleteSaveConfirmation(int slot)
         {
             PlayHover();
             SaveSystem.DeleteSave(slot);
-            LoadSavesInfo();
-            CheckSaveFile();
+            LoadSavesInfo(); // Met à jour l'affichage
+            CheckSaveFile(); // Vérifie l'état des sauvegardes
         }
 
         // ============ NOUVELLE PARTIE ============
 
+        /// <summary>
+        /// Démarre une nouvelle partie
+        /// </summary>
         public void NewGame()
         {
             PlaySwoosh();
 
+            // Trouve le meilleur slot pour une nouvelle partie
             int bestSlot = SaveSystem.GetBestSlotForNewGame();
             
             PlayerPrefs.SetInt("NewGameSlot", bestSlot);
@@ -254,6 +290,7 @@ namespace SlimUI.ModernMenu
             
             Debug.Log($"Nouvelle partie démarrée dans le slot {bestSlot}");
 
+            // Affiche une confirmation si le slot contient déjà une sauvegarde
             if (SaveSystem.HasSaveInSlot(bestSlot) && newGameConfirmationPanel != null)
             {
                 newGameConfirmationPanel.SetActive(true);
@@ -264,10 +301,13 @@ namespace SlimUI.ModernMenu
             }
         }
 
+        /// <summary>
+        /// Confirme et démarre réellement la nouvelle partie
+        /// </summary>
         public void StartNewGame()
         {
             int slot = PlayerPrefs.GetInt("NewGameSlot", 1);
-            SaveSystem.DeleteSave(slot);
+            SaveSystem.DeleteSave(slot); // Nettoie l'ancienne sauvegarde
             
             if (newGameConfirmationPanel != null)
             {
@@ -277,6 +317,9 @@ namespace SlimUI.ModernMenu
             LoadScene("mainScene");
         }
 
+        /// <summary>
+        /// Annule le démarrage d'une nouvelle partie
+        /// </summary>
         public void CancelNewGame()
         {
             PlayHover();
@@ -289,6 +332,9 @@ namespace SlimUI.ModernMenu
 
         // ============ NAVIGATION MENUS ============
 
+        /// <summary>
+        /// Ouvre le menu de sélection de campagne
+        /// </summary>
         public void PlayCampaign()
         {
             PlaySwoosh();
@@ -298,6 +344,9 @@ namespace SlimUI.ModernMenu
             playMenu.SetActive(true);
         }
 
+        /// <summary>
+        /// Retourne au menu principal
+        /// </summary>
         public void ReturnMenu()
         {
             PlaySwoosh();
@@ -309,11 +358,17 @@ namespace SlimUI.ModernMenu
             mainMenu.SetActive(true);
         }
 
+        /// <summary>
+        /// Désactive le menu de jeu
+        /// </summary>
         public void DisablePlayCampaign()
         {
             playMenu.SetActive(false);
         }
 
+        /// <summary>
+        /// Affiche le menu de confirmation de sortie
+        /// </summary>
         public void AreYouSure()
         {
             PlaySwoosh();
@@ -323,6 +378,9 @@ namespace SlimUI.ModernMenu
             DisablePlayCampaign();
         }
 
+        /// <summary>
+        /// Ouvre le menu des crédits
+        /// </summary>
         public void CreditsMenu()
         {
             PlaySwoosh();
@@ -332,6 +390,9 @@ namespace SlimUI.ModernMenu
             exitMenu.SetActive(false);
         }
 
+        /// <summary>
+        /// Ouvre le menu de gestion des sauvegardes
+        /// </summary>
         public void SavesMenus()
         {
             PlaySwoosh();
@@ -339,19 +400,25 @@ namespace SlimUI.ModernMenu
             if (savesMenu)
             {
                 savesMenu.SetActive(true);
-                LoadSavesInfo();
+                LoadSavesInfo(); // Charge les infos à l'ouverture
             }
             exitMenu.SetActive(false);
         }
 
         // ============ POSITION CAMERA ============
 
+        /// <summary>
+        /// Déplace la caméra en position 2 (pour les sous-menus)
+        /// </summary>
         public void Position2()
         {
             DisablePlayCampaign();
             CameraObject.SetFloat("Animate", 1);
         }
 
+        /// <summary>
+        /// Déplace la caméra en position 1 (menu principal)
+        /// </summary>
         public void Position1()
         {
             CameraObject.SetFloat("Animate", 0);
@@ -359,6 +426,9 @@ namespace SlimUI.ModernMenu
 
         // ============ SETTINGS PANELS ============
 
+        /// <summary>
+        /// Désactive tous les panels de paramètres
+        /// </summary>
         void DisablePanels()
         {
             PanelSkin.SetActive(false);
@@ -367,6 +437,9 @@ namespace SlimUI.ModernMenu
             lineSkin.SetActive(false);
         }
 
+        /// <summary>
+        /// Active le panel des paramètres jeu
+        /// </summary>
         public void GamePanel()
         {
             DisablePanels();
@@ -374,6 +447,9 @@ namespace SlimUI.ModernMenu
             lineGame.SetActive(true);
         }
 
+        /// <summary>
+        /// Active le panel des skins
+        /// </summary>
         public void SkinPanel()
         {
             DisablePanels();
@@ -383,6 +459,10 @@ namespace SlimUI.ModernMenu
 
         // ============ FONCTIONS SCENE ============
 
+        /// <summary>
+        /// Charge une scène de manière asynchrone
+        /// </summary>
+        /// <param name="sceneName">Nom de la scène à charger</param>
         public void LoadScene(string sceneName)
         {
             SceneManager.LoadSceneAsync(sceneName);
@@ -390,16 +470,25 @@ namespace SlimUI.ModernMenu
 
         // ============ SONS FX ============
 
+        /// <summary>
+        /// Joue le son de survol d'élément UI
+        /// </summary>
         public void PlayHover()
         {
             hoverSound.Play();
         }
 
+        /// <summary>
+        /// Joue le son de déplacement de slider
+        /// </summary>
         public void PlaySFXHover()
         {
             sliderSound.Play();
         }
 
+        /// <summary>
+        /// Joue le son de transition (swoosh)
+        /// </summary>
         public void PlaySwoosh()
         {
             swooshSound.Play();
@@ -407,6 +496,9 @@ namespace SlimUI.ModernMenu
 
         // ============ QUITTER LE JEU ============
 
+        /// <summary>
+        /// Quitte l'application
+        /// </summary>
         public void QuitGame()
         {
             SceneNavigator.ExitApp();

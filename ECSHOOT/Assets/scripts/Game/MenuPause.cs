@@ -31,12 +31,14 @@ public class MenuPause : MonoBehaviour
         if (saveNotificationPanel != null) saveNotificationPanel.SetActive(false);
         if (saveMenuPanel != null) saveMenuPanel.SetActive(false);
         
+        // Dans le menu pause on a 3 slot dans lesquels faut faire la sauvegarde.
         if (saveSlot1Button != null) saveSlot1Button.onClick.AddListener(() => SaveToSlot(1));
         if (saveSlot2Button != null) saveSlot2Button.onClick.AddListener(() => SaveToSlot(2));
         if (saveSlot3Button != null) saveSlot3Button.onClick.AddListener(() => SaveToSlot(3));
         if (saveMenuCancelButton != null) saveMenuCancelButton.onClick.AddListener(CloseSaveMenu);
     }
-
+    
+    // Continuer le jeu 
     public void ResumeGame()
     {
         gameObject.SetActive(false);
@@ -44,6 +46,7 @@ public class MenuPause : MonoBehaviour
         CloseSaveMenu();
     }
 
+    // Arreter l'etat du jeu
     public void PauseGame()
     {
         gameObject.SetActive(true);
@@ -54,6 +57,8 @@ public class MenuPause : MonoBehaviour
     {
         if (gameManagerScript != null)
         {   
+            // Le jeu doit sauvegarder en quittant la partie
+            // Le slot est le meme dans lequel la partie a ete demaree
             int currentSlot = gameManagerScript.GetCurrentSaveSlot();
             if (currentSlot == 0)
             {
@@ -98,6 +103,7 @@ public class MenuPause : MonoBehaviour
         UpdateSlotInfo(3, saveSlot3Info);
     }
 
+    // Methode permettant d'afficher les infos den la partie et de la sauvegarde dans le slot
     private void UpdateSlotInfo(int slot, TextMeshProUGUI textUI)
     {
         if (textUI == null) return;
@@ -115,7 +121,8 @@ public class MenuPause : MonoBehaviour
             textUI.text = $"Slot {slot}:\n(Vide)";
         }
     }
-
+    
+    // Sauvegarde le jeu dans le slot choisi
     private void SaveToSlot(int slot)
     {
         if (gameManagerScript != null)
@@ -128,7 +135,9 @@ public class MenuPause : MonoBehaviour
     }
 
     // ============ NOTIFICATION ============
-
+    
+    
+    // En cas de sauvegarde on affiche le slot dans lequel elle a ete faite
     private void ShowSaveNotification(string message)
     {
         if (saveNotificationPanel != null && saveNotificationText != null)
@@ -138,7 +147,7 @@ public class MenuPause : MonoBehaviour
             Invoke("HideSaveNotification", notificationDisplayTime);
         }
     }
-
+    
     private void HideSaveNotification()
     {
         if (saveNotificationPanel != null)

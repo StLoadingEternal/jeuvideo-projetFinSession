@@ -27,7 +27,8 @@ public class GameManager : MonoBehaviour
     public int enemiesAlive = 0;
     private int score = 0;
     private float waveDuration = 10f;
-
+    
+    
     [Header("Système de Boss")]
     public GameObject bossPrefab;
     public int bossSpawnWaveInterval = 4;
@@ -61,6 +62,7 @@ public class GameManager : MonoBehaviour
   
     private void Start()
     {
+        //mis en place des references
         playerControllerScript = player.GetComponent<PlayerController>();
         enemySpawnerScript = GameObject.Find("EnemySpawner").GetComponent<EnemySpawner>();
 
@@ -83,7 +85,7 @@ public class GameManager : MonoBehaviour
     {
         if (isGameOver)
             return;
-
+        // Trigger le menu pause
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             if (Time.timeScale == 1)
@@ -107,6 +109,7 @@ public class GameManager : MonoBehaviour
                 }
                 else
                 {
+                    // on tient le slot loade en memoire
                     slot = PlayerPrefs.GetInt("LoadSlot", 0);
                     if (slot == 0) slot = 1;
                 }
@@ -122,15 +125,14 @@ public class GameManager : MonoBehaviour
             SaveSystem.SaveGame(state);
             currentSaveSlot = slot;
             
-            Debug.Log($"Partie sauvegardée dans le slot {slot}");
         }
     }
-
+    
+    // cette methode permet de lancer une nouvelle partie ou une partie existante
     public void LoadGame()
     {
         if (PlayerPrefs.GetInt("NewGame", 0) == 1)
         {
-            Debug.Log("Nouvelle partie démarrée");
             isNewGame = true;
             
             score = 0;
@@ -151,7 +153,8 @@ public class GameManager : MonoBehaviour
             UpdateLifeUI();
             return;
         }
-
+        
+        // On load une partie existante
         int loadSlot = PlayerPrefs.GetInt("LoadSlot", 0);
         GameState state = null;
 
@@ -182,14 +185,11 @@ public class GameManager : MonoBehaviour
             UpdateScoreUI();
             UpdateLifeUI(playerControllerScript.currentLives);
             
-            Debug.Log($"Partie chargée depuis le slot {state.saveSlot}");
-            
             PlayerPrefs.DeleteKey("LoadSlot");
             PlayerPrefs.Save();
         }
         else
         {
-            Debug.Log("Nouvelle partie démarrée (pas de sauvegarde)");
             isNewGame = true;
             
             if (playerControllerScript != null)
@@ -202,14 +202,18 @@ public class GameManager : MonoBehaviour
     }
 
     public int GetCurrentSaveSlot() { return currentSaveSlot; }
-
+    
+    
+    // On tient en memoire le slot sur lequel la partie a ete lance
+    // Ca va etre le meme sur lequel les futures sauvegarde du meme load iront
     public void SetCurrentSaveSlot(int slot)
     {
         currentSaveSlot = slot;
         PlayerPrefs.SetInt("CurrentSaveSlot", slot);
         PlayerPrefs.Save();
     }
-
+    
+    // Methode d'ecrasement
     public void DeleteCurrentSave()
     {
         if (currentSaveSlot > 0)
@@ -218,11 +222,13 @@ public class GameManager : MonoBehaviour
         }
     }
 
-
+    
+    // Commencer une nouvelle partie (en sauvegardant sur un slot)
     public void StartNewGameInSlot(int slot)
     {
         SaveSystem.DeleteSave(slot);
         
+        // On reitialise les valeurs avant de commencer
         score = 0;
         currentWave = 0;
         bossAppearanceCount = 0;
@@ -245,8 +251,6 @@ public class GameManager : MonoBehaviour
             DestroyAllEnemies();
             StartCoroutine(StartWave());
         }
-        
-        Debug.Log($"Nouvelle partie dans le slot {slot}");
     }
 
     public void StartNewGame()
@@ -273,12 +277,14 @@ public class GameManager : MonoBehaviour
         if (scoreText != null)
             scoreText.text = "Score : " + score;
     }
-
+    
+    // Fin de partie ( perte )
     public void GameOver()
     {
         isGameOver = true;
         gameOverPanel.SetActive(true);
-
+        
+        // On joue des particules de destruction sur le joueur
         destructionParticle.Play();
 
         if (countdownCoroutine != null)
@@ -292,13 +298,14 @@ public class GameManager : MonoBehaviour
         destructionPlayerSound.Play();
         gameOverSound.Play();
     }
-
+    
     public void RetryGame()
     {
         DeleteCurrentSave();
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
-
+    
+    // Mise a jour Ui montrant les informant de la vague qui commence
     public IEnumerator AfficherVague()
     {
         if (waveText != null)
@@ -314,13 +321,15 @@ public class GameManager : MonoBehaviour
         if (indications != null)
             indications.gameObject.SetActive(false);
     }
-
+    
+    
     IEnumerator StartWave()
     {
         // Bloquer les vagues en cas de gameOver
         if (isGameOver)
             yield break;
-
+        
+        // sauvegarder la partie a chague vague
         if (!isNewGame || currentWave > 1)
         {
             SaveGame();
@@ -333,6 +342,7 @@ public class GameManager : MonoBehaviour
 
         isBossWave = (currentWave % bossSpawnWaveInterval == 0 && currentWave > 0);
         
+        // vague de boss. Son apparence change avec l'apparition
         if (isBossWave)
         {
             bossAppearanceCount++;
@@ -345,8 +355,11 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    
+    // Une vague normal avec des enemis de base qui ne tirent pas 
     void StartNormalWave()
     {
+        // Le nombre d'enemis est calcule en fonction de la vague
         int totalEnemies = initialEnemies + (currentWave - 1);
         float horizontalSpeed = 10f + (currentWave - 1) * 2f;
 
@@ -356,7 +369,8 @@ public class GameManager : MonoBehaviour
     IEnumerator SpawnNormalEnemies(int totalEnemies, float horizontalSpeed)
     {
         int spawnedEnemies = 0;
-
+        
+        // Faire apparaitre la quantite d'enemi qu'il faut
         while (spawnedEnemies < totalEnemies)
         {
             if (enemiesAlive < 10)
@@ -375,7 +389,9 @@ public class GameManager : MonoBehaviour
 
         StartCountdown();
     }
-
+    
+    
+    // Afficher les messages qu'il faut pour la vague de Boss
     IEnumerator SpawnBossWave()
     {
         if (waveText != null)
@@ -394,11 +410,14 @@ public class GameManager : MonoBehaviour
         SpawnBoss();
         StartBossCountdown();
     }
-
+    
+    
+    // Faire apparaitre le Boss
     void SpawnBoss()
     {
         if (bossPrefab == null) return;
-    
+        
+        // Le nombre de Boss augmente avec les vagues
         int numberOfBosses = (bossAppearanceCount >= 3) ? 2 : 1;
     
         for (int i = 0; i < numberOfBosses; i++)
@@ -442,7 +461,9 @@ public class GameManager : MonoBehaviour
 
         countdownCoroutine = StartCoroutine(LancerDecompte());
     }
-
+    
+    // Les enemis doivent etre tuer dans un delai
+    // Cette methode lance le decompte
     private IEnumerator LancerDecompte()
     {
         float countdown = waveDuration + (currentWave - 1) * 5;
@@ -452,7 +473,8 @@ public class GameManager : MonoBehaviour
             // Bloquer les vagues en cas de gameOver
             if (isGameOver)
                 yield break;
-
+            
+            // Afficher le temps
             if (countdownText != null)
                 countdownText.text = "Temps : " + Mathf.Ceil(countdown);
             yield return new WaitForSeconds(1f);
@@ -479,7 +501,8 @@ public class GameManager : MonoBehaviour
             StartCoroutine(StartWave());
         }
     }
-
+    
+    // Le minuteur pour la vague du boss
     void StartBossCountdown()
     {
         if (countdownCoroutine != null)
@@ -487,7 +510,7 @@ public class GameManager : MonoBehaviour
         
         countdownCoroutine = StartCoroutine(BossDecompte());
     }
-
+    
     private IEnumerator BossDecompte()
     {
         float countdown = 30f;

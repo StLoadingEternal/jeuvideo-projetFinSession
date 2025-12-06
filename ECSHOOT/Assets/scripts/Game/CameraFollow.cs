@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class CameraFollow : MonoBehaviour
+public class CameraFollow : MonoBehaviour //Permet la suivit du joueur dans son mouvement
 {
     [Header("Target")]
     public Transform player;

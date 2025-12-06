@@ -7,7 +7,7 @@ public class DontDestroyOnLOad : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void Awake()
     {
-        //Préserver l'objet de jeu entre les scènes
+        //Preserver l'objet de jeu entre les scenes
         if (FindObjectsByType<DontDestroyOnLOad>(FindObjectsSortMode.None).Length > 1)
         {
             Destroy(gameObject);
